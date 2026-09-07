@@ -1,5 +1,8 @@
 package cl.agrotrack.deliveries.dominio;
 
+import java.text.Normalizer;
+import java.util.Locale;
+
 /**
  * Estados del ciclo de vida de una entrega.
  *
@@ -10,7 +13,7 @@ public enum EstadoEntrega {
 
     REGISTRADA("Registrada"),
     RECIBIDA("Recibida"),
-    EN_CLASIFICACION("En clasificacion"),
+    EN_CLASIFICACION("En clasificación"),
     EN_DESPACHO("En despacho"),
     DESPACHADA("Despachada", true),
     RECHAZADA("Rechazada", true);
@@ -35,5 +38,27 @@ public enum EstadoEntrega {
     /** Un estado terminal no admite ninguna transicion de salida. */
     public boolean esTerminal() {
         return terminal;
+    }
+
+    /**
+     * Acepta lo que mande el cliente: con o sin tilde, en cualquier caja,
+     * con espacios o guiones. "EN_CLASIFICACIÓN" (como lo escribe el
+     * enunciado) y "en clasificacion" resuelven al mismo valor.
+     *
+     * @throws IllegalArgumentException si no corresponde a ningun estado
+     */
+    public static EstadoEntrega parse(String texto) {
+        if (texto == null || texto.isBlank()) {
+            throw new IllegalArgumentException("El estado es obligatorio");
+        }
+        String normalizado = Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase(Locale.ROOT)
+                .replaceAll("[\\s\\-]+", "_");
+        try {
+            return valueOf(normalizado);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Estado desconocido: " + texto);
+        }
     }
 }
