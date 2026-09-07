@@ -1,0 +1,275 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-09-07T19:29:03.948-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] c.a.audit.MsAgrotrackAuditApplication    : Starting MsAgrotrackAuditApplication v0.0.1-SNAPSHOT using Java 21.0.12.1 with PID 18060 (C:\Users\deint\Desktop\AgroTrack\ms-agrotrack-audit\target\ms-agrotrack-audit-0.0.1-SNAPSHOT.jar started by deint in C:\Users\deint\Desktop\AgroTrack\ms-agrotrack-audit)
+2026-09-07T19:29:04.028-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] c.a.audit.MsAgrotrackAuditApplication    : The following 1 profile is active: "local"
+2026-09-07T19:29:08.197-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-09-07T19:29:08.329-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 111 ms. Found 1 JPA repository interface.
+2026-09-07T19:29:11.246-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2026-09-07T19:29:11.342-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-07T19:29:11.345-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-09-07T19:29:11.535-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-07T19:29:11.539-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 7198 ms
+2026-09-07T19:29:13.355-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-07T19:29:14.120-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@542ff147
+2026-09-07T19:29:14.125-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-07T19:29:14.259-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/agro_audit (PostgreSQL 16.15)
+2026-09-07T19:29:14.478-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.119s)
+2026-09-07T19:29:14.588-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 1
+2026-09-07T19:29:14.599-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-09-07T19:29:14.785-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-09-07T19:29:14.925-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.53.Final
+2026-09-07T19:29:14.979-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-09-07T19:29:15.564-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-09-07T19:29:15.724-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.15
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-09-07T19:29:16.927-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-09-07T19:29:16.999-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-09-07T19:29:18.397-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-09-07T19:29:19.232-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path '/'
+2026-09-07T19:29:19.357-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.a.k.clients.consumer.ConsumerConfig    : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.include.jmx.reporter = true
+	auto.offset.reset = earliest
+	bootstrap.servers = [localhost:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-audit-consumer-1
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = false
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = audit-consumer
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metadata.recovery.strategy = none
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+
+2026-09-07T19:29:19.436-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-09-07T19:29:19.648-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.9.2
+2026-09-07T19:29:19.679-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: 5e9866f43ab8e7e4
+2026-09-07T19:29:19.679-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1788820159647
+2026-09-07T19:29:19.693-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] o.a.k.c.c.i.ClassicKafkaConsumer         : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Subscribed to topic(s): deliveries.events
+2026-09-07T19:29:19.714-03:00  INFO 18060 --- [ms-agrotrack-audit] [           main] c.a.audit.MsAgrotrackAuditApplication    : Started MsAgrotrackAuditApplication in 17.131 seconds (process running for 18.823)
+2026-09-07T19:29:20.270-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-09-07T19:29:20.272-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Discovered group coordinator localhost:9092 (id: 2147483646 rack: null)
+2026-09-07T19:29:20.276-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] (Re-)joining group
+2026-09-07T19:29:20.294-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Request joining group due to: need to re-join with the given member-id: consumer-audit-consumer-1-1e1fb2ec-a7ce-4ca9-8281-57530f7261c2
+2026-09-07T19:29:20.294-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] (Re-)joining group
+2026-09-07T19:29:20.299-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Successfully joined group with generation Generation{generationId=9, memberId='consumer-audit-consumer-1-1e1fb2ec-a7ce-4ca9-8281-57530f7261c2', protocol='range'}
+2026-09-07T19:29:20.304-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Finished assignment for group at generation 9: {consumer-audit-consumer-1-1e1fb2ec-a7ce-4ca9-8281-57530f7261c2=Assignment(partitions=[deliveries.events-0, deliveries.events-1, deliveries.events-2])}
+2026-09-07T19:29:20.311-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Successfully synced group in generation Generation{generationId=9, memberId='consumer-audit-consumer-1-1e1fb2ec-a7ce-4ca9-8281-57530f7261c2', protocol='range'}
+2026-09-07T19:29:20.312-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Notifying assignor about the new Assignment(partitions=[deliveries.events-0, deliveries.events-1, deliveries.events-2])
+2026-09-07T19:29:20.314-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Adding newly assigned partitions: deliveries.events-0, deliveries.events-1, deliveries.events-2
+2026-09-07T19:29:20.321-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Found no committed offset for partition deliveries.events-0
+2026-09-07T19:29:20.322-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition deliveries.events-1 to the committed offset FetchPosition{offset=12, offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null)], epoch=0}}
+2026-09-07T19:29:20.323-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition deliveries.events-2 to the committed offset FetchPosition{offset=2, offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null)], epoch=0}}
+2026-09-07T19:29:20.333-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.c.internals.SubscriptionState    : [Consumer clientId=consumer-audit-consumer-1, groupId=audit-consumer] Resetting offset for partition deliveries.events-0 to position FetchPosition{offset=0, offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 1 rack: null)], epoch=0}}.
+2026-09-07T19:29:20.334-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.s.k.l.KafkaMessageListenerContainer    : audit-consumer: partitions assigned: [deliveries.events-0, deliveries.events-1, deliveries.events-2]
+2026-09-07T19:29:21.668-03:00  INFO 18060 --- [ms-agrotrack-audit] [nio-8086-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-07T19:29:21.668-03:00  INFO 18060 --- [ms-agrotrack-audit] [nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-07T19:29:21.668-03:00  INFO 18060 --- [ms-agrotrack-audit] [nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-09-07T19:29:24.894-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] c.a.audit.aplicacion.AuditService        : [timeline] delivery.registered DEL-2026-000005 por productor-smoke
+2026-09-07T19:29:24.944-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.clients.producer.ProducerConfig    : ProducerConfig values: 
+	acks = -1
+	auto.include.jmx.reporter = true
+	batch.size = 16384
+	bootstrap.servers = [localhost:9092]
+	buffer.memory = 33554432
+	client.dns.lookup = use_all_dns_ips
+	client.id = ms-agrotrack-audit-producer-1
+	compression.gzip.level = -1
+	compression.lz4.level = 9
+	compression.type = none
+	compression.zstd.level = 3
+	connections.max.idle.ms = 540000
+	delivery.timeout.ms = 120000
+	enable.idempotence = true
+	enable.metrics.push = true
+	interceptor.classes = []
+	key.serializer = class org.apache.kafka.common.serialization.StringSerializer
+	linger.ms = 0
+	max.block.ms = 60000
+	max.in.flight.requests.per.connection = 5
+	max.request.size = 1048576
+	metadata.max.age.ms = 300000
+	metadata.max.idle.ms = 300000
+	metadata.recovery.strategy = none
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partitioner.adaptive.partitioning.enable = true
+	partitioner.availability.timeout.ms = 0
+	partitioner.class = null
+	partitioner.ignore.keys = false
+	receive.buffer.bytes = 32768
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retries = 2147483647
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	transaction.timeout.ms = 60000
+	transactional.id = null
+	value.serializer = class org.apache.kafka.common.serialization.StringSerializer
+
+2026-09-07T19:29:24.946-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-09-07T19:29:24.962-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=ms-agrotrack-audit-producer-1] Instantiated an idempotent producer.
+2026-09-07T19:29:25.000-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.9.2
+2026-09-07T19:29:25.000-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: 5e9866f43ab8e7e4
+2026-09-07T19:29:25.002-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1788820164999
+2026-09-07T19:29:25.024-03:00  INFO 18060 --- [ms-agrotrack-audit] [udit-producer-1] org.apache.kafka.clients.Metadata        : [Producer clientId=ms-agrotrack-audit-producer-1] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-09-07T19:29:25.025-03:00  INFO 18060 --- [ms-agrotrack-audit] [udit-producer-1] o.a.k.c.p.internals.TransactionManager   : [Producer clientId=ms-agrotrack-audit-producer-1] ProducerId set to 9 with epoch 0
+2026-09-07T19:29:25.120-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] c.a.audit.aplicacion.AuditService        : [timeline] delivery.received DEL-2026-000005 por operador-smoke
+2026-09-07T19:29:25.395-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] c.a.audit.aplicacion.AuditService        : [timeline] delivery.classifying DEL-2026-000005 por operador-smoke
+2026-09-07T19:29:25.442-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] c.a.audit.aplicacion.AuditService        : [timeline] delivery.dispatching DEL-2026-000005 por operador-smoke
+2026-09-07T19:29:25.482-03:00  INFO 18060 --- [ms-agrotrack-audit] [ntainer#0-0-C-1] c.a.audit.aplicacion.AuditService        : [timeline] delivery.dispatched DEL-2026-000005 por operador-smoke
