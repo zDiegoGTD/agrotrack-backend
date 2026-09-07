@@ -15,13 +15,13 @@ public interface EntregaRepository extends JpaRepository<Entrega, Long>, JpaSpec
 
     Optional<Entrega> findByCodigo(String codigo);
 
-    @Query(value = "SELECT SEQ_ENTREGA_CODIGO.NEXTVAL FROM dual", nativeQuery = true)
+    @Query(value = "SELECT nextval('seq_entrega_codigo')", nativeQuery = true)
     long siguienteNumeroDeCodigo();
 
     /**
      * Filtro de GET /api/deliveries. Se arma con Specifications y no con un
-     * JPQL de ":x is null or ..." porque Oracle no acepta bind de null sin
-     * tipo en comparaciones de TIMESTAMP (ORA-00932).
+     * JPQL de ":x is null or ..." porque el bind de null sin tipo en
+     * comparaciones de fecha es fragil segun el motor.
      */
     static Specification<Entrega> filtro(EstadoEntrega estado, Instant desde, Instant hasta, String productorId) {
         return (root, query, cb) -> {

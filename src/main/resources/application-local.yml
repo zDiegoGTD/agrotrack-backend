@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:oracle:thin:@//localhost:1521/FREEPDB1
+    url: jdbc:postgresql://localhost:5432/agro_deliveries
     username: agro_deliveries
     password: agro_deliveries
   security:

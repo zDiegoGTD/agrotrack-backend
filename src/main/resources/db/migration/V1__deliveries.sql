@@ -1,40 +1,40 @@
--- Esquema agro_deliveries. Ver docs/06-modelo-de-datos.md.
+-- Base agro_deliveries (PostgreSQL). Ver docs/06-modelo-de-datos.md.
 
-CREATE SEQUENCE SEQ_ENTREGA START WITH 1 INCREMENT BY 1 NOCACHE;
+CREATE SEQUENCE seq_entrega START 1 INCREMENT 1;
 
 -- Numera el codigo legible DEL-AAAA-NNNNNN, independiente de la PK.
-CREATE SEQUENCE SEQ_ENTREGA_CODIGO START WITH 1 INCREMENT BY 1 NOCACHE;
+CREATE SEQUENCE seq_entrega_codigo START 1 INCREMENT 1;
 
-CREATE TABLE ENTREGA (
-    ID               NUMBER(19)                    NOT NULL,
-    CODIGO           VARCHAR2(30)                  NOT NULL,
-    PRODUCTOR_ID     VARCHAR2(50)                  NOT NULL,
+CREATE TABLE entrega (
+    id               BIGINT          NOT NULL,
+    codigo           VARCHAR(30)     NOT NULL,
+    productor_id     VARCHAR(50)     NOT NULL,
     -- Sin FK: producto y bodega viven en otro servicio (agro_catalog).
-    PRODUCTO_ID      NUMBER(19)                    NOT NULL,
-    BODEGA_ID        NUMBER(19)                    NOT NULL,
-    CANTIDAD         NUMBER(12,2)                  NOT NULL,
-    PESO_RECIBIDO    NUMBER(12,2),
-    ESTADO           VARCHAR2(20)                  NOT NULL,
-    MOTIVO_RECHAZO   VARCHAR2(500),
-    FECHA_REGISTRO   TIMESTAMP(6) WITH TIME ZONE   NOT NULL,
-    FECHA_RECEPCION  TIMESTAMP(6) WITH TIME ZONE,
-    FECHA_DESPACHO   TIMESTAMP(6) WITH TIME ZONE,
-    VERSION          NUMBER(19)                    DEFAULT 0 NOT NULL,
-    CONSTRAINT PK_ENTREGA         PRIMARY KEY (ID),
-    CONSTRAINT UK_ENTREGA_CODIGO  UNIQUE (CODIGO),
-    CONSTRAINT CK_ENTREGA_ESTADO  CHECK (ESTADO IN (
+    producto_id      BIGINT          NOT NULL,
+    bodega_id        BIGINT          NOT NULL,
+    cantidad         NUMERIC(12,2)   NOT NULL,
+    peso_recibido    NUMERIC(12,2),
+    estado           VARCHAR(20)     NOT NULL,
+    motivo_rechazo   VARCHAR(500),
+    fecha_registro   TIMESTAMPTZ     NOT NULL,
+    fecha_recepcion  TIMESTAMPTZ,
+    fecha_despacho   TIMESTAMPTZ,
+    version          BIGINT          NOT NULL DEFAULT 0,
+    CONSTRAINT pk_entrega          PRIMARY KEY (id),
+    CONSTRAINT uk_entrega_codigo   UNIQUE (codigo),
+    CONSTRAINT ck_entrega_estado   CHECK (estado IN (
         'REGISTRADA','RECIBIDA','EN_CLASIFICACION','EN_DESPACHO','DESPACHADA','RECHAZADA')),
-    CONSTRAINT CK_ENTREGA_CANTIDAD CHECK (CANTIDAD > 0)
+    CONSTRAINT ck_entrega_cantidad CHECK (cantidad > 0)
 );
 
 -- GET /api/deliveries?status=&from=&to=
-CREATE INDEX IX_ENTREGA_ESTADO_FECHA ON ENTREGA (ESTADO, FECHA_REGISTRO);
+CREATE INDEX ix_entrega_estado_fecha ON entrega (estado, fecha_registro);
 -- El productor viendo sus propias entregas
-CREATE INDEX IX_ENTREGA_PRODUCTOR ON ENTREGA (PRODUCTOR_ID, FECHA_REGISTRO);
+CREATE INDEX ix_entrega_productor ON entrega (productor_id, fecha_registro);
 
 -- Idempotencia de consumidores (docs/02-contrato-de-eventos.md)
-CREATE TABLE PROCESSED_EVENTS (
-    EVENT_ID      VARCHAR2(36)   NOT NULL,
-    PROCESSED_AT  TIMESTAMP(6)   NOT NULL,
-    CONSTRAINT PK_PROCESSED_EVENTS PRIMARY KEY (EVENT_ID)
+CREATE TABLE processed_events (
+    event_id      VARCHAR(36)   NOT NULL,
+    processed_at  TIMESTAMPTZ   NOT NULL,
+    CONSTRAINT pk_processed_events PRIMARY KEY (event_id)
 );

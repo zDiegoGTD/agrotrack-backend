@@ -19,48 +19,48 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "ENTREGA")
+@Table(name = "entrega")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Entrega {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_entrega")
-    @SequenceGenerator(name = "seq_entrega", sequenceName = "SEQ_ENTREGA", allocationSize = 1)
+    @SequenceGenerator(name = "seq_entrega", sequenceName = "seq_entrega", allocationSize = 1)
     private Long id;
 
     @Column(nullable = false, length = 30, unique = true)
     private String codigo;
 
-    @Column(name = "PRODUCTOR_ID", nullable = false, length = 50)
+    @Column(name = "productor_id", nullable = false, length = 50)
     private String productorId;
 
-    @Column(name = "PRODUCTO_ID", nullable = false)
+    @Column(name = "producto_id", nullable = false)
     private Long productoId;
 
-    @Column(name = "BODEGA_ID", nullable = false)
+    @Column(name = "bodega_id", nullable = false)
     private Long bodegaId;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal cantidad;
 
-    @Column(name = "PESO_RECIBIDO", precision = 12, scale = 2)
+    @Column(name = "peso_recibido", precision = 12, scale = 2)
     private BigDecimal pesoRecibido;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private EstadoEntrega estado;
 
-    @Column(name = "MOTIVO_RECHAZO", length = 500)
+    @Column(name = "motivo_rechazo", length = 500)
     private String motivoRechazo;
 
-    @Column(name = "FECHA_REGISTRO", nullable = false)
+    @Column(name = "fecha_registro", nullable = false)
     private Instant fechaRegistro;
 
-    @Column(name = "FECHA_RECEPCION")
+    @Column(name = "fecha_recepcion")
     private Instant fechaRecepcion;
 
-    @Column(name = "FECHA_DESPACHO")
+    @Column(name = "fecha_despacho")
     private Instant fechaDespacho;
 
     @Version
