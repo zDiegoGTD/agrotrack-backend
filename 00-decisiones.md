@@ -5,22 +5,27 @@ martes dice lo contrario.
 
 ---
 
-## D1 — Una instancia Oracle con cuatro esquemas, no cuatro instancias
+## D1 — PostgreSQL, una instancia, una base por servicio
 
 **Enunciado:** `deliveries`, `catalog`, `audit` y `report` tienen "DB: Oracle".
+**El profesor aclaró (2026-09-07) que el motor es flexible.**
 
-**Decidido:** una sola instancia Oracle Free con un esquema por servicio
-(`agro_deliveries`, `agro_catalog`, `agro_audit`, `agro_report`), sin acceso
-cruzado entre esquemas.
+**Decidido:** PostgreSQL 16, una sola instancia con una base y un rol por
+servicio (`agro_deliveries`, `agro_catalog`, `agro_audit`, `agro_report`).
+Cada servicio conoce solo sus credenciales.
 
-**Por qué:** Oracle XE/Free pide ~2 GB de RAM por instancia. Cuatro instancias
-son 8 GB solo en bases de datos — no caben en un PC de 16 GB ni en una EC2 de
-capa gratuita. El aislamiento por esquema da la misma propiedad que importa
-("cada servicio es dueño de sus tablas y nadie más las toca") a un costo
-realista.
+**Por qué Postgres y no Oracle:** ~200 MB de RAM contra ~2 GB; arranca en
+segundos, no en minutos; los tests de integración con Testcontainers pasan
+de ~35 s a ~5 s; sin límites de licencia en AWS; `BOOLEAN`, `TIMESTAMPTZ` y
+`JSONB` nativos. Se empezó con Oracle y se migró el mismo día, antes de
+escribir `audit` y `report`: costó media hora.
 
-**Si la pauta exige instancias separadas:** cambia la URL de conexión de cada
-servicio. Media hora, ningún cambio de código.
+**Por qué una instancia:** el aislamiento que importa ("cada servicio es
+dueño de sus tablas y nadie más las toca") lo dan la base y el rol separados.
+Cuatro instancias serían cuatro contenedores más sin ganancia real.
+
+**Si la pauta exige Oracle:** el historial de git tiene la versión Oracle de
+catalog y deliveries funcionando (commits anteriores al 2026-09-07 tarde).
 
 ---
 
