@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: ms-agrotrack-mq-admin
+  profiles:
+    default: local
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:agrotrack}
+    password: ${RABBITMQ_PASSWORD:CambiaEsto123}
+
+server:
+  port: ${SERVER_PORT:8087}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
