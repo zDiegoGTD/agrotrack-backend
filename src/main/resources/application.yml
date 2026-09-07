@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: ms-agrotrack-kafka-admin
+  profiles:
+    default: local
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    admin:
+      # Declarar la topologia es la unica razon de ser de este servicio:
+      # si no llega al broker, mejor que no arranque.
+      fail-fast: true
+
+agrotrack:
+  kafka:
+    # 1 en el PC (un solo broker), 3 en AWS (kafka/compose.yml). Con menos
+    # brokers que replicas, la creacion del topico falla y el servicio no arranca.
+    replicas: ${KAFKA_REPLICAS:1}
+    particiones: 3
+
+server:
+  port: ${SERVER_PORT:8088}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
