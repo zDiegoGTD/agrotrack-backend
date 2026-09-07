@@ -1,5 +1,12 @@
 # Modelo de datos
 
+> **Motor: PostgreSQL 16** (D1). Los tipos de las tablas de abajo se
+> escribieron para Oracle antes del cambio; el DDL real esta en los
+> `V1__*.sql` de cada servicio (`NUMBER` -> `NUMERIC`/`BIGINT`,
+> `VARCHAR2` -> `VARCHAR`, `NUMBER(1)` -> `BOOLEAN`, `TIMESTAMP WITH TIME
+> ZONE` -> `TIMESTAMPTZ`, `CLOB` -> `JSONB`). "Esquema" aqui significa
+> "base de datos propia del servicio".
+
 Cada servicio es dueño de sus tablas. Nadie lee las tablas de otro, ni
 siquiera estando en la misma instancia Oracle (decisión D1).
 
