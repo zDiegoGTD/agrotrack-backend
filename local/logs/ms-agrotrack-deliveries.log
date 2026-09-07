@@ -1,0 +1,168 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-09-07T19:29:05.269-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] c.a.d.MsAgrotrackDeliveriesApplication   : Starting MsAgrotrackDeliveriesApplication v0.0.1-SNAPSHOT using Java 21.0.12.1 with PID 7328 (C:\Users\deint\Desktop\AgroTrack\ms-agrotrack-deliveries\target\ms-agrotrack-deliveries-0.0.1-SNAPSHOT.jar started by deint in C:\Users\deint\Desktop\AgroTrack\ms-agrotrack-deliveries)
+2026-09-07T19:29:05.345-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] c.a.d.MsAgrotrackDeliveriesApplication   : The following 1 profile is active: "local"
+2026-09-07T19:29:10.083-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-09-07T19:29:10.355-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 249 ms. Found 1 JPA repository interface.
+2026-09-07T19:29:13.463-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8082 (http)
+2026-09-07T19:29:13.527-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-07T19:29:13.529-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-09-07T19:29:13.595-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-07T19:29:13.597-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 8141 ms
+2026-09-07T19:29:14.973-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-07T19:29:15.343-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@3b7b0b57
+2026-09-07T19:29:15.347-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-07T19:29:15.411-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/agro_deliveries (PostgreSQL 16.15)
+2026-09-07T19:29:15.539-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.073s)
+2026-09-07T19:29:15.588-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 1
+2026-09-07T19:29:15.604-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-09-07T19:29:15.763-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-09-07T19:29:15.874-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.53.Final
+2026-09-07T19:29:16.000-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-09-07T19:29:16.393-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-09-07T19:29:16.516-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.15
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-09-07T19:29:17.644-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-09-07T19:29:17.710-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-09-07T19:29:18.111-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-09-07T19:29:19.493-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-09-07T19:29:20.115-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8082 (http) with context path '/'
+2026-09-07T19:29:20.135-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [           main] c.a.d.MsAgrotrackDeliveriesApplication   : Started MsAgrotrackDeliveriesApplication in 17.492 seconds (process running for 19.294)
+2026-09-07T19:29:21.153-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-07T19:29:21.218-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-07T19:29:21.218-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-09-07T19:29:23.707-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-1] c.a.d.aplicacion.EntregaService          : Entrega DEL-2026-000005 registrada por productor-smoke (CLIENTE)
+2026-09-07T19:29:23.991-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-1] o.a.k.clients.producer.ProducerConfig    : ProducerConfig values: 
+	acks = -1
+	auto.include.jmx.reporter = true
+	batch.size = 16384
+	bootstrap.servers = [localhost:9092]
+	buffer.memory = 33554432
+	client.dns.lookup = use_all_dns_ips
+	client.id = ms-agrotrack-deliveries-producer-1
+	compression.gzip.level = -1
+	compression.lz4.level = 9
+	compression.type = none
+	compression.zstd.level = 3
+	connections.max.idle.ms = 540000
+	delivery.timeout.ms = 120000
+	enable.idempotence = true
+	enable.metrics.push = true
+	interceptor.classes = []
+	key.serializer = class org.apache.kafka.common.serialization.StringSerializer
+	linger.ms = 0
+	max.block.ms = 60000
+	max.in.flight.requests.per.connection = 5
+	max.request.size = 1048576
+	metadata.max.age.ms = 300000
+	metadata.max.idle.ms = 300000
+	metadata.recovery.strategy = none
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partitioner.adaptive.partitioning.enable = true
+	partitioner.availability.timeout.ms = 0
+	partitioner.class = null
+	partitioner.ignore.keys = false
+	receive.buffer.bytes = 32768
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retries = 2147483647
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	transaction.timeout.ms = 60000
+	transactional.id = null
+	value.serializer = class org.apache.kafka.common.serialization.StringSerializer
+
+2026-09-07T19:29:24.094-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-1] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-09-07T19:29:24.133-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-1] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=ms-agrotrack-deliveries-producer-1] Instantiated an idempotent producer.
+2026-09-07T19:29:24.216-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-1] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.9.2
+2026-09-07T19:29:24.216-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-1] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: 5e9866f43ab8e7e4
+2026-09-07T19:29:24.218-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-1] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1788820164213
+2026-09-07T19:29:24.737-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [ries-producer-1] org.apache.kafka.clients.Metadata        : [Producer clientId=ms-agrotrack-deliveries-producer-1] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+2026-09-07T19:29:24.738-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [ries-producer-1] o.a.k.c.p.internals.TransactionManager   : [Producer clientId=ms-agrotrack-deliveries-producer-1] ProducerId set to 8 with epoch 0
+2026-09-07T19:29:24.779-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-1] c.a.d.i.mensajeria.PublicadorMensajeria  : [kafka] delivery.registered DEL-2026-000005 eventId=01a07dfd-8cbd-7a1f-853a-f93877faa571
+2026-09-07T19:29:25.033-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-4] c.a.d.aplicacion.EntregaService          : Entrega DEL-2026-000005: REGISTRADA -> RECIBIDA por operador-smoke (OPERADOR); efectos [DESCONTAR_CAPACIDAD, NOTIFICAR_PRODUCTOR, EMITIR_TICKET_BODEGA]
+2026-09-07T19:29:25.080-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-4] c.a.d.i.mensajeria.PublicadorMensajeria  : [kafka] delivery.received DEL-2026-000005 eventId=01a07dfd-91a9-717d-817a-27db6939d444
+2026-09-07T19:29:25.092-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-4] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-09-07T19:29:25.222-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-4] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#52dfd7f5:0/SimpleConnection@4be342a4 [delegate=amqp://agrotrack@127.0.0.1:5672/, localPort=57450]
+2026-09-07T19:29:25.302-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-4] c.a.d.i.mensajeria.PublicadorMensajeria  : [rabbit] email.send DEL-2026-000005 eventId=01a07dfd-91ab-7cf8-a9a3-9d33798d5a40
+2026-09-07T19:29:25.309-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-4] c.a.d.i.mensajeria.PublicadorMensajeria  : [rabbit] receipt.ticket DEL-2026-000005 eventId=01a07dfd-91ab-77e1-ba66-e4a7d0ff19fd
+2026-09-07T19:29:25.373-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-5] c.a.d.aplicacion.EntregaService          : Entrega DEL-2026-000005: RECIBIDA -> EN_CLASIFICACION por operador-smoke (OPERADOR); efectos [NOTIFICAR_PRODUCTOR]
+2026-09-07T19:29:25.386-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-5] c.a.d.i.mensajeria.PublicadorMensajeria  : [kafka] delivery.classifying DEL-2026-000005 eventId=01a07dfd-92fe-779b-951c-21e18814c20b
+2026-09-07T19:29:25.388-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-5] c.a.d.i.mensajeria.PublicadorMensajeria  : [rabbit] email.send DEL-2026-000005 eventId=01a07dfd-92fe-7091-97c6-7f35995c2364
+2026-09-07T19:29:25.421-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-3] c.a.d.aplicacion.EntregaService          : Entrega DEL-2026-000005: EN_CLASIFICACION -> EN_DESPACHO por operador-smoke (OPERADOR); efectos []
+2026-09-07T19:29:25.434-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-3] c.a.d.i.mensajeria.PublicadorMensajeria  : [kafka] delivery.dispatching DEL-2026-000005 eventId=01a07dfd-932e-79c8-a3ff-a70c5ede6f2d
+2026-09-07T19:29:25.462-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-7] c.a.d.aplicacion.EntregaService          : Entrega DEL-2026-000005: EN_DESPACHO -> DESPACHADA por operador-smoke (OPERADOR); efectos [NOTIFICAR_PRODUCTOR, GENERAR_GUIA_DESPACHO]
+2026-09-07T19:29:25.474-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-7] c.a.d.i.mensajeria.PublicadorMensajeria  : [kafka] delivery.dispatched DEL-2026-000005 eventId=01a07dfd-9356-7fb7-b035-124b1e4572db
+2026-09-07T19:29:25.476-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-7] c.a.d.i.mensajeria.PublicadorMensajeria  : [rabbit] email.send DEL-2026-000005 eventId=01a07dfd-9356-7477-9b1d-fffbed4e2d86
+2026-09-07T19:29:25.477-03:00  INFO 7328 --- [ms-agrotrack-deliveries] [nio-8082-exec-7] c.a.d.i.mensajeria.PublicadorMensajeria  : [rabbit] voucher.gen DEL-2026-000005 eventId=01a07dfd-9357-75db-8bff-063b5c75942b
