@@ -11,7 +11,7 @@ import org.testcontainers.oracle.OracleContainer;
  * Base de los tests de integracion: Oracle real en Docker, una sola vez
  * por JVM. Catalog se reemplaza por un mock: aqui se prueba deliveries.
  */
-@SpringBootTest
+@SpringBootTest(properties = "agrotrack.mensajeria.enabled=false")
 public abstract class OracleIT {
 
     static final OracleContainer ORACLE = new OracleContainer("gvenzl/oracle-free:23-slim")
