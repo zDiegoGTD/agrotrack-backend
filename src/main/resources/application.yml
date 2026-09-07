@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: ms-agrotrack-audit
+  profiles:
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      group-id: audit-consumer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    listener:
+      # El offset se confirma cuando el listener retorna (RECORD): si el
+      # proceso muere a mitad, el evento se vuelve a leer y la tabla
+      # processed_events lo deduplica.
+      ack-mode: record
+
+agrotrack:
+  kafka:
+    topico-eventos: deliveries.events
+    topico-timeline: audit.timeline
+
+server:
+  port: ${SERVER_PORT:8086}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
