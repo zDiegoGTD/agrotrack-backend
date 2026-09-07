@@ -8,7 +8,7 @@ Estado al 7 de septiembre de 2026.
 | Node 24 / npm | ✅ Ya estaba | — |
 | Git 2.55 | ✅ Ya estaba | — |
 | Angular 22 + MSAL | ✅ Instalado | `frontend-agrotrack` con `@azure/msal-angular` 6 |
-| 6 servicios Spring | ✅ Generados | Boot 4.0.8, Java 21, Maven |
+| 6 servicios Spring | ✅ Generados y compilando | Boot 3.5.16, Java 21, Maven |
 | **WSL2** | ❌ **Roto** | Requiere admin — ver abajo |
 | **Docker Desktop** | ❌ **No instalado** | Requiere admin — ver abajo |
 | **Azure App Registration** | ⚠️ Sin verificar | Sólo lo puedes comprobar tú — ver abajo |
