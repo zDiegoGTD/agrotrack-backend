@@ -1,0 +1,90 @@
+# ec2-kafka — Zookeeper x3 + Kafka x3 + Kafka UI (enunciado, sección 7).
+# Réplica 3 en los tópicos exige 3 brokers: por eso esta EC2 va aparte.
+name: agrotrack-kafka
+
+x-zk-common: &zk-common
+  image: confluentinc/cp-zookeeper:7.6.1
+  environment: &zk-env
+    ZOOKEEPER_CLIENT_PORT: 2181
+    ZOOKEEPER_TICK_TIME: 2000
+    ZOOKEEPER_INIT_LIMIT: 5
+    ZOOKEEPER_SYNC_LIMIT: 2
+    ZOOKEEPER_SERVERS: zk-1:2888:3888;zk-2:2888:3888;zk-3:2888:3888
+
+x-kafka-common: &kafka-common
+  image: confluentinc/cp-kafka:7.6.1
+  depends_on: [zk-1, zk-2, zk-3]
+  environment: &kafka-env
+    KAFKA_ZOOKEEPER_CONNECT: zk-1:2181,zk-2:2181,zk-3:2181
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    KAFKA_MIN_INSYNC_REPLICAS: 2
+    # Los tópicos los declara ms-agrotrack-kafka-admin, no Kafka solo.
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+services:
+  zk-1:
+    <<: *zk-common
+    container_name: at-zk-1
+    hostname: zk-1
+    environment: { <<: *zk-env, ZOOKEEPER_SERVER_ID: 1 }
+  zk-2:
+    <<: *zk-common
+    container_name: at-zk-2
+    hostname: zk-2
+    environment: { <<: *zk-env, ZOOKEEPER_SERVER_ID: 2 }
+  zk-3:
+    <<: *zk-common
+    container_name: at-zk-3
+    hostname: zk-3
+    environment: { <<: *zk-env, ZOOKEEPER_SERVER_ID: 3 }
+
+  kafka-1:
+    <<: *kafka-common
+    container_name: at-kafka-1
+    hostname: kafka-1
+    ports: ["9092:9092"]
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:29092,EXTERNAL://${EC2_KAFKA_HOST:-localhost}:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+  kafka-2:
+    <<: *kafka-common
+    container_name: at-kafka-2
+    hostname: kafka-2
+    ports: ["9093:9093"]
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:29092,EXTERNAL://${EC2_KAFKA_HOST:-localhost}:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,EXTERNAL://0.0.0.0:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+  kafka-3:
+    <<: *kafka-common
+    container_name: at-kafka-3
+    hostname: kafka-3
+    ports: ["9094:9094"]
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:29092,EXTERNAL://${EC2_KAFKA_HOST:-localhost}:9094
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,EXTERNAL://0.0.0.0:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: at-kafka-ui
+    depends_on: [kafka-1, kafka-2, kafka-3]
+    ports: ["8080:8080"]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: agrotrack
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092

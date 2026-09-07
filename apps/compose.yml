@@ -1,0 +1,85 @@
+# ec2-apps — los microservicios de dominio (enunciado, sección 7).
+# Rabbit y Kafka NO viven aquí: están en ec2-mq y ec2-kafka.
+# Por eso todo host externo entra por variable de entorno.
+name: agrotrack-apps
+
+x-svc-common: &svc-common
+  restart: unless-stopped
+  environment: &svc-env
+    SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-aws}
+    # Identidad: todos los servicios validan el MISMO issuer.
+    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${AZURE_ISSUER_URI}
+    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES: api://${AZURE_API_CLIENT_ID}
+
+services:
+  bff:
+    <<: *svc-common
+    build: ../../ms-agrotrack-bff
+    container_name: at-bff
+    ports: ["8081:8080"]     # único servicio expuesto al API Gateway
+    environment:
+      <<: *svc-env
+      DELIVERIES_URL: http://deliveries:8080
+      CATALOG_URL: http://catalog:8080
+      REPORT_URL: http://report:8080
+      AUDIT_URL: http://audit:8080
+
+  deliveries:
+    <<: *svc-common
+    build: ../../ms-agrotrack-deliveries
+    container_name: at-deliveries
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//${ORACLE_HOST}:1521/${ORACLE_DB}
+      SPRING_DATASOURCE_USERNAME: agro_deliveries
+      SPRING_DATASOURCE_PASSWORD: ${ORACLE_DELIVERIES_PASSWORD}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP}
+
+  catalog:
+    <<: *svc-common
+    build: ../../ms-agrotrack-catalog
+    container_name: at-catalog
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//${ORACLE_HOST}:1521/${ORACLE_DB}
+      SPRING_DATASOURCE_USERNAME: agro_catalog
+      SPRING_DATASOURCE_PASSWORD: ${ORACLE_CATALOG_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP}
+
+  # Sin DB y sin puerto: sólo consume de RabbitMQ (enunciado, sección 5).
+  notify:
+    <<: *svc-common
+    build: ../../ms-agrotrack-notify
+    container_name: at-notify
+    environment:
+      <<: *svc-env
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+  report:
+    <<: *svc-common
+    build: ../../ms-agrotrack-report
+    container_name: at-report
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//${ORACLE_HOST}:1521/${ORACLE_DB}
+      SPRING_DATASOURCE_USERNAME: agro_report
+      SPRING_DATASOURCE_PASSWORD: ${ORACLE_REPORT_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP}
+      SPRING_KAFKA_CONSUMER_GROUP_ID: report-consumer
+
+  audit:
+    <<: *svc-common
+    build: ../../ms-agrotrack-audit
+    container_name: at-audit
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//${ORACLE_HOST}:1521/${ORACLE_DB}
+      SPRING_DATASOURCE_USERNAME: agro_audit
+      SPRING_DATASOURCE_PASSWORD: ${ORACLE_AUDIT_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP}
+      SPRING_KAFKA_CONSUMER_GROUP_ID: audit-consumer
