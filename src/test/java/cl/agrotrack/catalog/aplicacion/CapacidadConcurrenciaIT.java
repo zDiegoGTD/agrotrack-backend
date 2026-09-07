@@ -4,7 +4,7 @@ import cl.agrotrack.catalog.aplicacion.Dtos.CapacidadRequest;
 import cl.agrotrack.catalog.dominio.CapacidadInsuficienteException;
 import cl.agrotrack.catalog.infraestructura.persistencia.Bodega;
 import cl.agrotrack.catalog.infraestructura.persistencia.BodegaRepository;
-import cl.agrotrack.catalog.soporte.OracleIT;
+import cl.agrotrack.catalog.soporte.PostgresIT;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * en una bodega de 100 a la vez: tienen que caber exactamente diez, ni uno
  * mas (sobreventa) ni uno menos (reserva perdida).
  */
-class CapacidadConcurrenciaIT extends OracleIT {
+class CapacidadConcurrenciaIT extends PostgresIT {
 
     @Autowired CapacidadService capacidad;
     @Autowired BodegaRepository bodegas;

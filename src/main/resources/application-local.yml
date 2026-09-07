@@ -1,7 +1,7 @@
 # Desarrollo en el PC: infra/local/compose.yml levantado.
 spring:
   datasource:
-    url: jdbc:oracle:thin:@//localhost:1521/FREEPDB1
+    url: jdbc:postgresql://localhost:5432/agro_catalog
     username: agro_catalog
     password: agro_catalog
   security:

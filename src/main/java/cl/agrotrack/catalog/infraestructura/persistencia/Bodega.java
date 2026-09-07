@@ -17,7 +17,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "BODEGA")
+@Table(name = "bodega")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -25,7 +25,7 @@ public class Bodega {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_bodega")
-    @SequenceGenerator(name = "seq_bodega", sequenceName = "SEQ_BODEGA", allocationSize = 1)
+    @SequenceGenerator(name = "seq_bodega", sequenceName = "seq_bodega", allocationSize = 1)
     private Long id;
 
     @Column(nullable = false, length = 120)
@@ -34,10 +34,10 @@ public class Bodega {
     @Column(length = 200)
     private String ubicacion;
 
-    @Column(name = "CAPACIDAD_TOTAL", nullable = false, precision = 12, scale = 2)
+    @Column(name = "capacidad_total", nullable = false, precision = 12, scale = 2)
     private BigDecimal capacidadTotal;
 
-    @Column(name = "CAPACIDAD_DISPONIBLE", nullable = false, precision = 12, scale = 2)
+    @Column(name = "capacidad_disponible", nullable = false, precision = 12, scale = 2)
     private BigDecimal capacidadDisponible;
 
     /**
