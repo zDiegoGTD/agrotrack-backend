@@ -1,4 +1,4 @@
-# Crear los 9 repositorios en GitHub
+# Crear los repositorios en GitHub
 
 **No ejecutado todavía.** Publicar repos es una acción que sale de este
 equipo, así que espera tu visto bueno explícito.
@@ -15,7 +15,7 @@ equipo, así que espera tu visto bueno explícito.
    gh auth login
    ```
 
-## Crear y subir los nueve
+## Crear y subir (los 9 originales ya estan; faltan los 2 administradores)
 
 Con `gh` autenticado, desde `C:\Users\deint\Desktop\AgroTrack`:
 
@@ -41,3 +41,12 @@ feature. El enunciado *sugiere* nueve repos, no los impone.
 
 Decidir esto **antes** de crear los remotos: cambiar después significa
 reescribir historial ya publicado.
+
+## Subir los cambios de los 9 que ya existen
+
+Todo esta commiteado en local. Desde `C:\Users\deint\Desktop\AgroTrack`, en
+PowerShell:
+
+```powershell
+foreach ($d in Get-ChildItem -Directory) { Push-Location $d; if (Test-Path .git) { git push }; Pop-Location }
+```

@@ -10,6 +10,12 @@
 
 **Spec:** `docs/00-decisiones.md` … `docs/06-modelo-de-datos.md` (repo `docs`).
 
+> **Estado al 2026-09-07 (noche):** Hitos A, B, C, D y E implementados y verificados
+> (131 tests automatizados + smoke test de punta a punta en `infra/local/smoke.ps1`).
+> Hito F: compose de las 3 EC2 y guia `infra/aws/README.md` listos; falta ejecutar el
+> despliegue real (necesita las cuentas). Cambio respecto al plan: el motor es
+> **PostgreSQL** (D1), no Oracle.
+
 ## Global Constraints
 
 - Spring Boot `3.5.16`, Java `21`, Maven wrapper. No Boot 4 (D2).
@@ -65,10 +71,10 @@ public record Envelope(
 **Files:** `ms-agrotrack-catalog/src/main/resources/db/migration/V1__catalog.sql`, entidades `Producto`, `Bodega` en `infraestructura/persistencia/`, repositorios Spring Data, `application*.yml`.
 **Produces:** tablas `PRODUCTO`, `BODEGA` (con `VERSION` y `CHECK` de capacidad) según `06-modelo-de-datos.md`; `ProductoRepository`, `BodegaRepository`.
 
-- [ ] Test de integración `CatalogSchemaIT` con Testcontainers Oracle: el contexto arranca, Flyway aplica V1, `ddl-auto=validate` no falla.
-- [ ] Ejecutar → falla (no hay migración).
-- [ ] Escribir V1, entidades, repos, yml.
-- [ ] Ejecutar → pasa. Commit.
+- [x] Test de integración `CatalogSchemaIT` con Testcontainers Oracle: el contexto arranca, Flyway aplica V1, `ddl-auto=validate` no falla.
+- [x] Ejecutar → falla (no hay migración).
+- [x] Escribir V1, entidades, repos, yml.
+- [x] Ejecutar → pasa. Commit.
 
 ### Task A2: catalog — API de productos y bodegas
 
@@ -79,17 +85,17 @@ public record Envelope(
 - `POST /api/catalog/bodegas/{id}/capacidad/reservar` y `/liberar` con body `{ "cantidad": 120.5, "entregaCodigo": "DEL-..." }` → 200 con capacidad restante, 409 si no alcanza. Uso interno de `deliveries` (roles ADMIN, OPERADOR).
 - Bloqueo optimista en `Bodega` (`@Version`), reintento automático en `reservar` ante `OptimisticLockException`.
 
-- [ ] Tests `@WebMvcTest` con `@WithMockUser(roles=...)`: 403 para CLIENTE en POST, 201 para ADMIN, validación 400.
-- [ ] Test de integración de concurrencia: 20 reservas paralelas sobre una bodega de capacidad 100 → exactamente las que caben, sin pérdida.
-- [ ] Implementar. Commit.
+- [x] Tests `@WebMvcTest` con `@WithMockUser(roles=...)`: 403 para CLIENTE en POST, 201 para ADMIN, validación 400.
+- [x] Test de integración de concurrencia: 20 reservas paralelas sobre una bodega de capacidad 100 → exactamente las que caben, sin pérdida.
+- [x] Implementar. Commit.
 
 ### Task A3: deliveries — esquema, entidad y repositorio
 
 **Files:** `V1__deliveries.sql` (`ENTREGA`, `PROCESSED_EVENTS`, índices, secuencia), entidad `Entrega`, `EntregaRepository` con `findByFiltros(estado, desde, hasta)`.
 **Produces:** persistencia de `Entrega` con `codigo` `DEL-YYYY-NNNNNN` generado por secuencia.
 
-- [ ] `EntregaRepositoryIT` (Testcontainers): guardar, buscar por código, filtrar por estado y rango.
-- [ ] Implementar. Commit.
+- [x] `EntregaRepositoryIT` (Testcontainers): guardar, buscar por código, filtrar por estado y rango.
+- [x] Implementar. Commit.
 
 ### Task A4: deliveries — casos de uso y API
 
@@ -101,9 +107,9 @@ public record Envelope(
 - `GET /api/deliveries?status=&from=&to=`.
 - Interfaz `PublicadorEfectos { void publicar(Entrega e, EstadoEntrega anterior, Set<Efecto> efectos, Actor actor, String traceId); }`.
 
-- [ ] Tests de `EntregaService` con mocks de `CatalogClient` y `PublicadorEfectos`: transición válida llama a reservar capacidad; rechazo T7 llama a liberar; si catalog devuelve 409, la transición no se persiste.
-- [ ] `@WebMvcTest` del controlador: códigos HTTP correctos.
-- [ ] Implementar. Commit.
+- [x] Tests de `EntregaService` con mocks de `CatalogClient` y `PublicadorEfectos`: transición válida llama a reservar capacidad; rechazo T7 llama a liberar; si catalog devuelve 409, la transición no se persiste.
+- [x] `@WebMvcTest` del controlador: códigos HTTP correctos.
+- [x] Implementar. Commit.
 
 ---
 
@@ -113,24 +119,24 @@ public record Envelope(
 
 **Produces:** al arrancar declara `cmd.direct`, `cmd.topic`, `cmd.dead.dlx`, las 3 colas con `x-dead-letter-exchange`/`x-dead-letter-routing-key` y sus 3 DLQ, bindings direct (`email.send`, `receipt.ticket`, `voucher.gen`) y topic (`email.*`, `receipt.#`, `voucher.*`). `GET /api/mq/topology` devuelve lo declarado. Repo con Dockerfile, en `apps/compose.yml`.
 
-- [ ] Test de integración con Testcontainers RabbitMQ: tras arrancar, las 6 colas y 3 exchanges existen (consulta vía `RabbitAdmin.getQueueInfo`).
-- [ ] Implementar con `Declarables`. Commit.
+- [x] Test de integración con Testcontainers RabbitMQ: tras arrancar, las 6 colas y 3 exchanges existen (consulta vía `RabbitAdmin.getQueueInfo`).
+- [x] Implementar con `Declarables`. Commit.
 
 ### Task B2: deliveries — publicar comandos en Rabbit
 
 **Files:** `infraestructura/mensajeria/PublicadorRabbit implements PublicadorEfectos` (parcial: efectos de comando), `Envelope`, `EnvelopeFactory` (UUID v7, traceId desde MDC/cabecera `traceparent` o generado).
 **Produces:** `NOTIFICAR_PRODUCTOR` → `cmd.direct`/`email.send`; `EMITIR_TICKET_BODEGA` → `receipt.ticket`; `GENERAR_GUIA_DESPACHO` → `voucher.gen`. Publicación **después del commit** (`TransactionSynchronization.afterCommit`).
 
-- [ ] Test con Testcontainers RabbitMQ: transición T2 deja un mensaje en `q.cmd.email` y otro en `q.cmd.receipt` con envelope válido.
-- [ ] Implementar. Commit.
+- [x] Test con Testcontainers RabbitMQ: transición T2 deja un mensaje en `q.cmd.email` y otro en `q.cmd.receipt` con envelope válido.
+- [x] Implementar. Commit.
 
 ### Task B3: notify — consumidores
 
 **Files:** `EmailListener`, `ReceiptListener`, `VoucherListener`, `ProcessedEventsStore` (en memoria + archivo, no hay DB), `EmailSender` (JavaMailSender si hay SMTP configurado; si no, log), `VoucherPdf` (OpenPDF → `./vouchers/<codigo>.pdf`).
 **Produces:** ACK manual; excepción → NACK sin requeue tras 3 intentos (retry con backoff en el contenedor de listeners) → DLQ. Métrica Micrometer `agrotrack.notify.dlq.total`.
 
-- [ ] Test: mensaje duplicado (mismo `eventId`) se procesa una sola vez. Mensaje malformado termina en la DLQ.
-- [ ] Implementar. Commit.
+- [x] Test: mensaje duplicado (mismo `eventId`) se procesa una sola vez. Mensaje malformado termina en la DLQ.
+- [x] Implementar. Commit.
 
 ---
 
@@ -140,32 +146,32 @@ public record Envelope(
 
 **Produces:** `NewTopic` para `deliveries.events` (3 particiones), `audit.timeline` (`cleanup.policy=compact,delete`, `retention.ms` 30 días), `deliveries.events.DLT`; réplicas = propiedad `agrotrack.kafka.replicas` (1 local, 3 aws). `GET /api/kafka/topics`.
 
-- [ ] Test con Testcontainers Kafka: los tres tópicos existen con la config esperada (`AdminClient.describeConfigs`).
-- [ ] Implementar. Commit.
+- [x] Test con Testcontainers Kafka: los tres tópicos existen con la config esperada (`AdminClient.describeConfigs`).
+- [x] Implementar. Commit.
 
 ### Task C2: deliveries — publicar hechos en Kafka
 
 **Files:** `PublicadorKafka` (se compone con `PublicadorRabbit` en `PublicadorCompuesto`: primero Kafka, después Rabbit — D5).
 **Produces:** un evento por transición (`delivery.registered|received|classifying|dispatching|dispatched|rejected`) en `deliveries.events`, clave = `codigo`, valor = envelope JSON.
 
-- [ ] Test con Testcontainers Kafka: T1 y T2 producen dos registros con la misma clave y `type` correcto.
-- [ ] Implementar. Commit.
+- [x] Test con Testcontainers Kafka: T1 y T2 producen dos registros con la misma clave y `type` correcto.
+- [x] Implementar. Commit.
 
 ### Task C3: audit — consumir y exponer timeline
 
 **Files:** `V1__audit.sql` (`EVENTO_TIMELINE`, `PROCESSED_EVENTS`), `TimelineListener`, `TimelineRepository`, `AuditController`.
 **Produces:** `GET /api/audit/deliveries/{codigo}/timeline`, `GET /api/audit/events?usuario=&desde=&hasta=&tipo=` (ADMIN, AUDITOR). Republica un resumen compactado en `audit.timeline` con clave `codigo`. `DefaultErrorHandler` con 3 reintentos y `DeadLetterPublishingRecoverer` → `deliveries.events.DLT`.
 
-- [ ] Test: consumir un envelope persiste una fila; el mismo `eventId` dos veces persiste una; un JSON inválido va al DLT.
-- [ ] Implementar. Commit.
+- [x] Test: consumir un envelope persiste una fila; el mismo `eventId` dos veces persiste una; un JSON inválido va al DLT.
+- [x] Implementar. Commit.
 
 ### Task C4: report — agregaciones y KPIs
 
 **Files:** `V1__report.sql` (`KPI_ENTREGAS_HORA`, `CICLO_ENTREGA`, `PROCESSED_EVENTS`), `KpiListener`, `ReportController`.
 **Produces:** `GET /api/report/kpis?range=last24h` → `{entregasPorHora:[{hora,registradas,recibidas,despachadas,rechazadas}], tiempoCicloPromedioMin, estadosActivos:{REGISTRADA:n,...}}`; `GET /api/report/top-services?range=last7d` → productos más recibidos. Solo ADMIN.
 
-- [ ] Test: tres eventos `received` en la misma hora → fila con `TOTAL_RECIBIDAS=3`; `dispatched` cierra `CICLO_ENTREGA` con minutos correctos.
-- [ ] Implementar. Commit.
+- [x] Test: tres eventos `received` en la misma hora → fila con `TOTAL_RECIBIDAS=3`; `dispatched` cierra `CICLO_ENTREGA` con minutos correctos.
+- [x] Implementar. Commit.
 
 ---
 
@@ -181,8 +187,8 @@ public record Envelope(
 **Files:** `ProxyController` (reenvía `/api/deliveries/**`, `/api/catalog/**`, `/api/report/**`, `/api/audit/**` al servicio correspondiente con el mismo Bearer), `MeController` (`GET /api/me` → nombre, oid, roles), `SecurityConfig` con reglas por ruta y rol, CORS para `http://localhost:4200`.
 **Produces:** un solo punto de entrada; autorización por rol antes de reenviar (regla del enunciado: el BFF comprueba que el rol puede usar el endpoint).
 
-- [ ] `@WebMvcTest`: CLIENTE a `/api/report/**` → 403 sin llegar al proxy; AUDITOR a `PUT /api/deliveries/**` → 403; OPERADOR a `GET /api/deliveries` → reenvía (mock de RestClient).
-- [ ] Implementar. Commit.
+- [x] `@WebMvcTest`: CLIENTE a `/api/report/**` → 403 sin llegar al proxy; AUDITOR a `PUT /api/deliveries/**` → 403; OPERADOR a `GET /api/deliveries` → reenvía (mock de RestClient).
+- [x] Implementar. Commit.
 
 ### Task D3: prueba de humo de punta a punta (script)
 
