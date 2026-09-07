@@ -1,7 +1,7 @@
 package cl.agrotrack.deliveries.infraestructura.persistencia;
 
 import cl.agrotrack.deliveries.dominio.EstadoEntrega;
-import cl.agrotrack.deliveries.soporte.OracleIT;
+import cl.agrotrack.deliveries.soporte.PostgresIT;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class EntregaRepositoryIT extends OracleIT {
+class EntregaRepositoryIT extends PostgresIT {
 
     @Autowired EntregaRepository repo;
 
