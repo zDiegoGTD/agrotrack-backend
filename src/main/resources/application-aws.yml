@@ -1,0 +1,11 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AZURE_ISSUER_URI}
+          audiences: api://${AZURE_API_CLIENT_ID}
+
+agrotrack:
+  cors:
+    origenes: ${CORS_ORIGENES}
