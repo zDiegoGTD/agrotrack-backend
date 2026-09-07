@@ -21,5 +21,9 @@ La topología con réplicas se prueba en AWS, no en el PC.
 
 ```bash
 cp .env.example .env      # y completa los valores
-docker compose -f local/compose.yml up -d
+docker compose --env-file .env -f local/compose.yml up -d
 ```
+
+`--env-file .env` no es opcional: `docker compose` busca el `.env` en la
+carpeta del archivo de compose (`local/`), no en la que estás parado. Sin
+esa bandera Oracle arranca sin contraseña y el contenedor se cae.
