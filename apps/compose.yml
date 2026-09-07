@@ -30,9 +30,9 @@ services:
     container_name: at-deliveries
     environment:
       <<: *svc-env
-      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//${ORACLE_HOST}:1521/${ORACLE_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_deliveries
       SPRING_DATASOURCE_USERNAME: agro_deliveries
-      SPRING_DATASOURCE_PASSWORD: ${ORACLE_DELIVERIES_PASSWORD}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_DELIVERIES_PASSWORD}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
@@ -44,9 +44,9 @@ services:
     container_name: at-catalog
     environment:
       <<: *svc-env
-      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//${ORACLE_HOST}:1521/${ORACLE_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_catalog
       SPRING_DATASOURCE_USERNAME: agro_catalog
-      SPRING_DATASOURCE_PASSWORD: ${ORACLE_CATALOG_PASSWORD}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_CATALOG_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP}
 
   # Sin DB y sin puerto: sólo consume de RabbitMQ (enunciado, sección 5).
@@ -66,9 +66,9 @@ services:
     container_name: at-report
     environment:
       <<: *svc-env
-      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//${ORACLE_HOST}:1521/${ORACLE_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_report
       SPRING_DATASOURCE_USERNAME: agro_report
-      SPRING_DATASOURCE_PASSWORD: ${ORACLE_REPORT_PASSWORD}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_REPORT_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP}
       SPRING_KAFKA_CONSUMER_GROUP_ID: report-consumer
 
@@ -78,8 +78,8 @@ services:
     container_name: at-audit
     environment:
       <<: *svc-env
-      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//${ORACLE_HOST}:1521/${ORACLE_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_audit
       SPRING_DATASOURCE_USERNAME: agro_audit
-      SPRING_DATASOURCE_PASSWORD: ${ORACLE_AUDIT_PASSWORD}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_AUDIT_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP}
       SPRING_KAFKA_CONSUMER_GROUP_ID: audit-consumer

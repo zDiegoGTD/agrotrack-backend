@@ -11,8 +11,8 @@ Tres stacks separados, uno por instancia EC2, tal como pide el enunciado (secci�
 ## Perfil local (`local/compose.yml`)
 
 La topología completa **no cabe** en un PC de 16 GB: son ~14 contenedores y
-Oracle solo ya pide 2 GB. `local/compose.yml` es la versión mínima para
-desarrollar en el notebook — 1 Oracle, 1 RabbitMQ, 1 Kafka en modo KRaft
+con Oracle habrian sido 2 GB solo de base. `local/compose.yml` es la versión mínima para
+desarrollar en el notebook — 1 PostgreSQL, 1 RabbitMQ, 1 Kafka en modo KRaft
 (sin Zookeeper) — funcionalmente equivalente para escribir código.
 
 La topología con réplicas se prueba en AWS, no en el PC.
