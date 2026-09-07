@@ -1,0 +1,33 @@
+-- Esquema agro_catalog. Ver docs/06-modelo-de-datos.md.
+
+CREATE SEQUENCE SEQ_PRODUCTO START WITH 1 INCREMENT BY 1 NOCACHE;
+
+CREATE TABLE PRODUCTO (
+    ID              NUMBER(19)      NOT NULL,
+    CODIGO          VARCHAR2(30)    NOT NULL,
+    NOMBRE          VARCHAR2(120)   NOT NULL,
+    UNIDAD_MEDIDA   VARCHAR2(10)    NOT NULL,
+    TARIFA          NUMBER(12,2)    NOT NULL,
+    ACTIVO          NUMBER(1)       DEFAULT 1 NOT NULL,
+    CONSTRAINT PK_PRODUCTO        PRIMARY KEY (ID),
+    CONSTRAINT UK_PRODUCTO_CODIGO UNIQUE (CODIGO),
+    CONSTRAINT CK_PRODUCTO_ACTIVO CHECK (ACTIVO IN (0, 1)),
+    CONSTRAINT CK_PRODUCTO_TARIFA CHECK (TARIFA >= 0)
+);
+
+CREATE SEQUENCE SEQ_BODEGA START WITH 1 INCREMENT BY 1 NOCACHE;
+
+CREATE TABLE BODEGA (
+    ID                      NUMBER(19)      NOT NULL,
+    NOMBRE                  VARCHAR2(120)   NOT NULL,
+    UBICACION               VARCHAR2(200),
+    CAPACIDAD_TOTAL         NUMBER(12,2)    NOT NULL,
+    CAPACIDAD_DISPONIBLE    NUMBER(12,2)    NOT NULL,
+    VERSION                 NUMBER(19)      DEFAULT 0 NOT NULL,
+    CONSTRAINT PK_BODEGA PRIMARY KEY (ID),
+    -- Ultima linea de defensa: aunque el codigo tenga un bug, la base no
+    -- acepta una bodega con capacidad negativa ni por encima del total.
+    CONSTRAINT CK_BODEGA_CAPACIDAD CHECK (
+        CAPACIDAD_DISPONIBLE >= 0 AND CAPACIDAD_DISPONIBLE <= CAPACIDAD_TOTAL
+    )
+);
