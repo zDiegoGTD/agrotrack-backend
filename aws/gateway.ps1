@@ -91,6 +91,11 @@ if (-not $stage -or $stage -eq 'None') { Aws apigatewayv2 create-stage --api-id 
 $invoke = (Aws apigatewayv2 get-api --api-id $apiId --query 'ApiEndpoint' --output text).Trim()
 Write-Host "`n   Invoke URL: $invoke" -ForegroundColor Green
 
+# Se guarda junto a las IPs para que smoke-aws.ps1 lo encuentre solo
+$hostsFile = Join-Path $root 'infra\.aws-hosts.json'
+$hosts | Add-Member -NotePropertyName gateway -NotePropertyValue $invoke -Force
+$hosts | ConvertTo-Json -Depth 3 | Set-Content $hostsFile -Encoding UTF8
+
 # Frontend de produccion apuntando al Gateway
 $envProd = Join-Path $root 'frontend-agrotrack\src\environments\environment.prod.ts'
 @"
