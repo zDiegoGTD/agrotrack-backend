@@ -155,3 +155,36 @@ Tropiezos reales durante el despliegue, por si se repiten:
 - Los nombres de security group no pueden empezar por `sg-`.
 - `docker compose` se ejecuta con `nohup` en la instancia: si la sesión SSH se
   cae durante los 10–15 min de construcción, el despliegue sigue.
+
+## Verificar el despliegue
+
+```powershell
+cd C:\Users\deint\Desktop\AgroTrack\infra\aws
+.\smoke-aws.ps1
+```
+
+Pide un token real de Azure con el **flujo de código de dispositivo** (muestra
+un código, lo pegas en `microsoft.com/devicelogin`) y recorre el flujo completo
+del enunciado **a través del API Gateway**: 401 sin token, `/api/me`, catálogo,
+registrar entrega, 409 al saltarse la recepción, recibir → capacidad baja,
+clasificar (con tilde), despachar, timeline en auditoría, KPIs en reportería,
+topología de Rabbit y Kafka.
+
+Requiere en Azure: **AgroTrack → Authentication → Allow public client flows = Sí**
+(solo para este script; el frontend no lo necesita).
+
+Si prefieres no usar el flujo de dispositivo: entra al frontend, abre las
+DevTools → Network → cualquier llamada a `/api/` → copia el header
+`Authorization` y pásalo con `-Token "eyJ..."`.
+
+## Estado verificado (2026-09-08)
+
+| Comprobación | Resultado |
+|---|---|
+| RabbitMQ clúster | 2 nodos corriendo (`rabbit@rabbit-1`, `rabbit@rabbit-2`) |
+| Topología Rabbit | 3 exchanges, 6 colas, 9 bindings; 1 consumidor por cola principal |
+| Kafka | 3 brokers + 3 ZK; los 3 tópicos creados por `kafka-admin` |
+| PostgreSQL | 4 bases con Flyway aplicado (`Successfully applied 1 migration`) |
+| Servicios | los 8 responden 200 en `/actuator/health` |
+| Frontend | `http://54.84.179.128` sirve la SPA apuntando al Gateway |
+| API Gateway | 401 sin token; preflight CORS 200 |
