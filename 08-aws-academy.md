@@ -124,8 +124,9 @@ Abrir `http://<IP_ELASTICA_APPS>` → «Iniciar sesión con Microsoft» → dash
 
 1. Start Lab → esperar verde.
 2. EC2 → seleccionar las tres → **Instance state → Start**. La Elastic IP se
-   conserva; las privadas también. Docker levanta todo solo (`restart:
-   unless-stopped`); dar 2–3 minutos.
+   conserva; las privadas también. Docker levanta todo solo (`restart: unless-stopped` en los tres stacks);
+   dar 2–3 minutos. **Las IPs publicas de kafka y mq cambian** en cada
+   arranque; las privadas no, que es lo que usan los servicios entre si.
 3. Si por alguna razón cambió una IP privada, editar `.env.aws` y repetir
    `subir.ps1 -Stack apps`.
 
