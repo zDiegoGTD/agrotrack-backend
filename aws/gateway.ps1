@@ -76,6 +76,14 @@ if (-not $routeId -or $routeId -eq 'None') {
   Write-Host '   ruta actualizada'
 }
 
+# Preflight CORS sin authorizer: el navegador manda OPTIONS sin token y la
+# ruta ANY con JWT lo rechazaria con 401, bloqueando todas las llamadas.
+$optId = (Aws apigatewayv2 get-routes --api-id $apiId --query "Items[?RouteKey=='OPTIONS /api/{proxy+}'].RouteId | [0]" --output text).Trim()
+if (-not $optId -or $optId -eq 'None') {
+  Aws apigatewayv2 create-route --api-id $apiId --route-key 'OPTIONS /api/{proxy+}' --target "integrations/$intId" --authorization-type NONE | Out-Null
+  Write-Host '   ruta OPTIONS /api/{proxy+} sin autorizacion (preflight CORS)'
+}
+
 # Stage $default con auto-deploy
 $stage = (Aws apigatewayv2 get-stages --api-id $apiId --query "Items[?StageName=='`$default'].StageName | [0]" --output text).Trim()
 if (-not $stage -or $stage -eq 'None') { Aws apigatewayv2 create-stage --api-id $apiId --stage-name '$default' --auto-deploy | Out-Null }
