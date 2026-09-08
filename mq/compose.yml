@@ -37,17 +37,23 @@ services:
       - "15673:15672"
     volumes:
       - rabbit2-data:/var/lib/rabbitmq
-    # Se une al clúster de rabbit-1. Reset borra el estado local del nodo 2,
+    # Se une al clúster de rabbit-1. El servidor corre en segundo plano y `wait`
+    # mantiene el contenedor atado a él. Reset borra el estado local del nodo 2,
     # que es lo correcto al unirse: el estado autoritativo vive en rabbit-1.
+    # Si la unión falla, arranca igual en solitario en vez de morir.
+    #
+    # Nota de guerra: la versión anterior terminaba en `tail -f /var/log/...`,
+    # pero la imagen oficial escribe los logs a stdout y no a archivos. El tail
+    # fallaba, el contenedor moría justo después de unirse, y RabbitMQ 4 (que
+    # usa Khepri/Raft para los metadatos) se quedaba sin quórum: declarar un
+    # exchange colgaba hasta agotar el timeout con INTERNAL_ERROR.
     command: >
       bash -c "
-        rabbitmq-server -detached &&
-        sleep 15 &&
-        rabbitmqctl stop_app &&
-        rabbitmqctl reset &&
-        rabbitmqctl join_cluster rabbit@rabbit-1 &&
-        rabbitmqctl start_app &&
-        tail -f /var/log/rabbitmq/*.log
+        rabbitmq-server &
+        sleep 25;
+        (rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster rabbit@rabbit-1 && rabbitmqctl start_app) || rabbitmqctl start_app;
+        rabbitmqctl cluster_status;
+        wait
       "
 
 volumes:
