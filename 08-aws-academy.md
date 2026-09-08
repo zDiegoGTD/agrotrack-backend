@@ -131,3 +131,27 @@ Abrir `http://<IP_ELASTICA_APPS>` → «Iniciar sesión con Microsoft» → dash
 
 **Al terminar de trabajar: Instance state → Stop.** Detenida no consume crédito
 de cómputo.
+
+## Lo que quedó creado (2026-09-07)
+
+Todo lo anterior se ejecutó con `infra/aws/crear.ps1`, `subir.ps1` y `gateway.ps1`
+(no a mano). Valores vivos en `infra/.aws-hosts.json` y `infra/.env.aws`.
+
+| Recurso | Valor |
+|---|---|
+| Cuenta / región | 902971831665 / us-east-1 (subnet en us-east-1a) |
+| ec2-kafka | t3.large · privada 172.31.4.207 · 3 ZK + 3 brokers + UI |
+| ec2-mq | t3.small · privada 172.31.14.198 · RabbitMQ 2 nodos |
+| ec2-apps | t3.large · **Elastic IP 54.84.179.128** · Postgres + 8 servicios + frontend |
+| API Gateway | `agrotrack-api` → `https://85v8hc0ry6.execute-api.us-east-1.amazonaws.com` con JWT Authorizer (issuer del tenant Mish, audiences `api://<client>` y `<client>`) |
+| Frontend | `http://54.84.179.128` (nginx) → llama al Gateway |
+
+Tropiezos reales durante el despliegue, por si se repiten:
+
+- La IP pública del PC cambió a mitad del despliegue y cortó el SSH (las reglas
+  eran `/32`). Por eso el 22 quedó abierto a cualquier origen: la llave sigue
+  siendo obligatoria.
+- `us-east-1e` no ofrece `t3.large`; se fija `us-east-1a`.
+- Los nombres de security group no pueden empezar por `sg-`.
+- `docker compose` se ejecuta con `nohup` en la instancia: si la sesión SSH se
+  cae durante los 10–15 min de construcción, el despliegue sigue.
