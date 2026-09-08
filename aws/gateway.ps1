@@ -19,7 +19,13 @@ $ErrorActionPreference = 'Stop'
 $env:AWS_DEFAULT_REGION = $Region
 $env:AWS_PAGER = ''
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-function Aws { $out = & aws @args 2>&1; if ($LASTEXITCODE -ne 0) { throw "aws $($args -join ' ') -> $out" }; return ($out | Out-String) }
+function Aws {
+  # stderr no se convierte en excepcion: en PS 5.1 cualquier aviso de la CLI lo haria
+  $ErrorActionPreference = 'Continue'
+  $out = & aws.exe @args 2>&1
+  if ($LASTEXITCODE -ne 0) { throw "aws $($args -join ' ') -> $($out | Out-String)" }
+  return (($out | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) | Out-String)
+}
 
 $hosts = Get-Content (Join-Path $root 'infra\.aws-hosts.json') -Raw | ConvertFrom-Json
 $appsIp = $hosts.apps.publica
