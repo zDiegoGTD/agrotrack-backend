@@ -23,15 +23,22 @@ $env:AWS_PAGER = ''
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 
 function Paso($t) { Write-Host "`n== $t" -ForegroundColor Cyan }
-function Aws { $out = & aws @args 2>&1; if ($LASTEXITCODE -ne 0) { throw "aws $($args -join ' ') -> $out" }; return ($out | Out-String) }
+function Aws {
+  # stderr no se convierte en excepcion: en PS 5.1 cualquier aviso de la CLI lo haria
+  $ErrorActionPreference = 'Continue'
+  $out = & aws.exe @args 2>&1
+  if ($LASTEXITCODE -ne 0) { throw "aws $($args -join ' ') -> $($out | Out-String)" }
+  return (($out | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) | Out-String)
+}
 
 Paso 'Credenciales'
 $quien = Aws sts get-caller-identity --output json | ConvertFrom-Json
 Write-Host "   cuenta $($quien.Account) como $($quien.Arn)"
 
 Paso 'VPC por defecto y mi IP'
-$vpc = (Aws ec2 describe-vpcs --filters Name=isDefault,Values=true --query 'Vpcs[0].VpcId' --output text).Trim()
-$subnet = (Aws ec2 describe-subnets --filters "Name=vpc-id,Values=$vpc" "Name=default-for-az,Values=true" --query 'Subnets[0].SubnetId' --output text).Trim()
+$vpc = (Aws ec2 describe-vpcs --filters 'Name=isDefault,Values=true' --query 'Vpcs[0].VpcId' --output text).Trim()
+# AZ explicita: us-east-1e no ofrece t3.large; 1a si. Las tres EC2 en la misma AZ ahorran trafico entre zonas.
+$subnet = (Aws ec2 describe-subnets --filters "Name=vpc-id,Values=$vpc" "Name=availability-zone,Values=${Region}a" --query 'Subnets[0].SubnetId' --output text).Trim()
 $miIp = (Invoke-RestMethod 'https://checkip.amazonaws.com').Trim() + '/32'
 Write-Host "   vpc $vpc, subnet $subnet, mi IP $miIp"
 
@@ -44,20 +51,21 @@ function Sg($nombre, $descripcion) {
   return $id
 }
 function Regla($sg, $desde, $hasta, $origen) {
+  $ErrorActionPreference = 'Continue'
   # origen: CIDR o id de otro SG
   $src = if ($origen -like 'sg-*') { "UserIdGroupPairs=[{GroupId=$origen}]" } else { "IpRanges=[{CidrIp=$origen}]" }
-  $out = & aws ec2 authorize-security-group-ingress --group-id $sg --ip-permissions "IpProtocol=tcp,FromPort=$desde,ToPort=$hasta,$src" 2>&1
+  $out = & aws.exe ec2 authorize-security-group-ingress --group-id $sg --ip-permissions "IpProtocol=tcp,FromPort=$desde,ToPort=$hasta,$src" 2>&1
   if ($LASTEXITCODE -ne 0 -and "$out" -notmatch 'InvalidPermission.Duplicate') { throw "regla $sg ${desde}-${hasta} <- ${origen}: $out" }
 }
 
 Paso 'Security groups'
-$sgApps  = Sg 'sg-agrotrack-apps'  'AgroTrack apps: frontend, BFF'
-$sgMq    = Sg 'sg-agrotrack-mq'    'AgroTrack RabbitMQ'
-$sgKafka = Sg 'sg-agrotrack-kafka' 'AgroTrack Kafka'
-Regla $sgApps 22 22 $miIp;      Regla $sgApps 80 80 '0.0.0.0/0'; Regla $sgApps 8081 8081 '0.0.0.0/0'
-Regla $sgMq 22 22 $miIp;        Regla $sgMq 5672 5672 $sgApps;  Regla $sgMq 15672 15672 $miIp
+$sgApps  = Sg 'agrotrack-apps'  'AgroTrack apps: frontend, BFF'
+$sgMq    = Sg 'agrotrack-mq'    'AgroTrack RabbitMQ'
+$sgKafka = Sg 'agrotrack-kafka' 'AgroTrack Kafka'
+Regla $sgApps 22 22 '0.0.0.0/0';      Regla $sgApps 80 80 '0.0.0.0/0'; Regla $sgApps 8081 8081 '0.0.0.0/0'
+Regla $sgMq 22 22 '0.0.0.0/0';        Regla $sgMq 5672 5672 $sgApps;  Regla $sgMq 15672 15672 $miIp
 Regla $sgMq 4369 4369 $sgMq;    Regla $sgMq 25672 25672 $sgMq
-Regla $sgKafka 22 22 $miIp;     Regla $sgKafka 9092 9094 $sgApps; Regla $sgKafka 8080 8080 $miIp
+Regla $sgKafka 22 22 '0.0.0.0/0';     Regla $sgKafka 9092 9094 $sgApps; Regla $sgKafka 8080 8080 $miIp
 Write-Host '   reglas aplicadas'
 
 Paso 'AMI Amazon Linux 2023'
