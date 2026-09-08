@@ -4,6 +4,9 @@ name: agrotrack-mq
 
 x-rabbit-common: &rabbit-common
   image: rabbitmq:4-management
+  # En AWS Academy la EC2 se detiene al acabar la sesión; sin esto los
+  # contenedores no vuelven al encenderla y hay que redesplegar a mano.
+  restart: unless-stopped
   environment: &rabbit-env
     RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
     RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
