@@ -88,7 +88,7 @@ cd /opt/agrotrack/infra
 touch .env.aws
 printf '%s\n' '$extra' >> .env.aws
 rm -f $log
-nohup bash -c '$compose up -d --build --remove-orphans; echo "__FIN__ \$?"' > $log 2>&1 < /dev/null &
+nohup bash -c '$compose up -d --build --remove-orphans; echo "__FIN__ `$?"' > $log 2>&1 < /dev/null &
 echo lanzado
 "@ -replace "`r", ''
 
