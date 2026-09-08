@@ -4,6 +4,9 @@ name: agrotrack-kafka
 
 x-zk-common: &zk-common
   image: confluentinc/cp-zookeeper:7.6.1
+  # En AWS Academy la EC2 se detiene al acabar la sesión; sin esto los
+  # contenedores no vuelven al encenderla y hay que redesplegar a mano.
+  restart: unless-stopped
   environment: &zk-env
     ZOOKEEPER_CLIENT_PORT: 2181
     ZOOKEEPER_TICK_TIME: 2000
@@ -13,6 +16,7 @@ x-zk-common: &zk-common
 
 x-kafka-common: &kafka-common
   image: confluentinc/cp-kafka:7.6.1
+  restart: unless-stopped
   depends_on: [zk-1, zk-2, zk-3]
   environment: &kafka-env
     KAFKA_ZOOKEEPER_CONNECT: zk-1:2181,zk-2:2181,zk-3:2181
@@ -82,6 +86,7 @@ services:
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
+    restart: unless-stopped
     container_name: at-kafka-ui
     depends_on: [kafka-1, kafka-2, kafka-3]
     ports: ["8080:8080"]
