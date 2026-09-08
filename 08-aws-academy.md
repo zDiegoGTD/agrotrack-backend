@@ -26,29 +26,29 @@ entrar a la consola.
 
 Crear en este orden (los de atrás referencian a los de adelante):
 
-**`sg-agrotrack-apps`**
+**`agrotrack-apps`**
 
 | Tipo | Puerto | Origen | Para |
 |---|---|---|---|
-| SSH | 22 | My IP | administrar |
+| SSH | 22 | 0.0.0.0/0 | administrar (la IP publica del PC cambio a mitad del primer despliegue y corto el SSH; la llave vockey sigue siendo obligatoria) |
 | HTTP | 80 | 0.0.0.0/0 | frontend |
 | Custom TCP | 8081 | 0.0.0.0/0 | BFF (el API Gateway entra por aquí) |
 
-**`sg-agrotrack-mq`**
+**`agrotrack-mq`**
 
 | Tipo | Puerto | Origen |
 |---|---|---|
 | SSH | 22 | My IP |
-| Custom TCP | 5672 | `sg-agrotrack-apps` |
+| Custom TCP | 5672 | `agrotrack-apps` |
 | Custom TCP | 15672 | My IP |
-| Custom TCP | 4369, 25672 | `sg-agrotrack-mq` (clúster entre nodos) |
+| Custom TCP | 4369, 25672 | `agrotrack-mq` (clúster entre nodos) |
 
-**`sg-agrotrack-kafka`**
+**`agrotrack-kafka`**
 
 | Tipo | Puerto | Origen |
 |---|---|---|
 | SSH | 22 | My IP |
-| Custom TCP | 9092–9094 | `sg-agrotrack-apps` |
+| Custom TCP | 9092–9094 | `agrotrack-apps` |
 | Custom TCP | 8080 | My IP (Kafka UI) |
 
 Los puertos 8082–8088 **no se abren**: solo el BFF habla con el exterior.
@@ -57,9 +57,9 @@ Los puertos 8082–8088 **no se abren**: solo el BFF habla con el exterior.
 
 | Nombre | AMI | Tipo | SG | Disco | User data |
 |---|---|---|---|---|---|
-| `ec2-kafka` | Amazon Linux 2023 | t3.large | sg-agrotrack-kafka | 20 GB | `infra/aws/user-data.sh` |
-| `ec2-mq` | Amazon Linux 2023 | t3.small | sg-agrotrack-mq | 10 GB | `infra/aws/user-data.sh` |
-| `ec2-apps` | Amazon Linux 2023 | t3.large | sg-agrotrack-apps | 30 GB | `infra/aws/user-data.sh` |
+| `ec2-kafka` | Amazon Linux 2023 | t3.large | agrotrack-kafka | 20 GB | `infra/aws/user-data.sh` |
+| `ec2-mq` | Amazon Linux 2023 | t3.small | agrotrack-mq | 10 GB | `infra/aws/user-data.sh` |
+| `ec2-apps` | Amazon Linux 2023 | t3.large | agrotrack-apps | 30 GB | `infra/aws/user-data.sh` |
 
 Key pair: **vockey**. El *user data* (pestaña *Advanced details*) instala Docker
 y Compose; con eso la instancia queda lista para recibir el código.
