@@ -1,2 +1,4 @@
 .env
 local/logs/
+.env.aws
+.aws-hosts.json

@@ -21,6 +21,16 @@ $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent   # .../AgroTrack
 $java = if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME 'bin\java.exe' } else { 'java' }
 $logs = Join-Path $PSScriptRoot 'logs'; New-Item -ItemType Directory -Force $logs | Out-Null
 
+# Libera los puertos de los servicios: un java zombi de una corrida anterior
+# haria fallar el arranque con "Port already in use" sin que se note.
+foreach ($puerto in 8081..8088) {
+  Get-NetTCPConnection -LocalPort $puerto -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction Stop; Write-Host "   liberado :$puerto (pid $($_.OwningProcess))" } catch { }
+  }
+}
+
+
+
 $servicios = [ordered]@{
   'ms-agrotrack-mq-admin'    = 8087
   'ms-agrotrack-kafka-admin' = 8088
