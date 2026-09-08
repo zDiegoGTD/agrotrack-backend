@@ -25,6 +25,24 @@ x-svc: &svc
     start_period: 60s
 
 services:
+  # ---- base de datos: una instancia, una base por servicio (D1) ----
+  postgres:
+    image: postgres:16-alpine
+    container_name: at-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../local/init-postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   # ---- administradores de topologia: arrancan primero ----
   mq-admin:
     <<: *svc
@@ -47,6 +65,8 @@ services:
     build: ../../ms-agrotrack-catalog
     container_name: at-catalog
     ports: ["8083:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
     environment:
       <<: *svc-env
       SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_catalog
@@ -59,6 +79,7 @@ services:
     container_name: at-deliveries
     ports: ["8082:8080"]
     depends_on:
+      postgres: { condition: service_healthy }
       mq-admin: { condition: service_healthy }
       kafka-admin: { condition: service_healthy }
     environment:
@@ -91,6 +112,7 @@ services:
     container_name: at-audit
     ports: ["8086:8080"]
     depends_on:
+      postgres: { condition: service_healthy }
       kafka-admin: { condition: service_healthy }
     environment:
       <<: *svc-env
@@ -104,6 +126,7 @@ services:
     container_name: at-report
     ports: ["8085:8080"]
     depends_on:
+      postgres: { condition: service_healthy }
       kafka-admin: { condition: service_healthy }
     environment:
       <<: *svc-env
@@ -135,3 +158,4 @@ services:
 
 volumes:
   notify-salida:
+  postgres-data:
