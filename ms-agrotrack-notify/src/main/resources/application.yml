@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: ms-agrotrack-notify
+  profiles:
+    default: local
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:agrotrack}
+    password: ${RABBITMQ_PASSWORD:CambiaEsto123}
+    listener:
+      simple:
+        # ACK si el listener termina, NACK sin requeue si lanza (RabbitConfig).
+        # Reintentos: 3 con backoff 1s/4s/16s; despues, DLQ.
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        prefetch: 10
+  mail:
+    # Sin host configurado, los emails se escriben en el log (dev/local).
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+agrotrack:
+  notify:
+    remitente: ${NOTIFY_REMITENTE:no-reply@agrotrack.local}
+    # Los productores se identifican por el oid de Azure; el correo real
+    # vendria de un directorio. Mientras no exista, se deriva asi:
+    dominio-productores: ${NOTIFY_DOMINIO_PRODUCTORES:agrotrack.local}
+    salida-dir: ${NOTIFY_SALIDA_DIR:./salida}
+
+server:
+  port: ${SERVER_PORT:8084}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    mail:
+      enabled: false
