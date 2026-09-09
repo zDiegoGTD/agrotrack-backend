@@ -1,0 +1,64 @@
+# ec2-mq — RabbitMQ en clúster de 2 nodos (enunciado, sección 7).
+# Los dos nodos comparten el mismo Erlang cookie; rabbit-2 se une a rabbit-1.
+name: agrotrack-mq
+
+x-rabbit-common: &rabbit-common
+  image: rabbitmq:4-management
+  # En AWS Academy la EC2 se detiene al acabar la sesión; sin esto los
+  # contenedores no vuelven al encenderla y hay que redesplegar a mano.
+  restart: unless-stopped
+  environment: &rabbit-env
+    RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+    RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+    RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+  healthcheck:
+    test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+    interval: 15s
+    timeout: 10s
+    retries: 10
+
+services:
+  rabbit-1:
+    <<: *rabbit-common
+    container_name: at-rabbit-1
+    hostname: rabbit-1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbit1-data:/var/lib/rabbitmq
+
+  rabbit-2:
+    <<: *rabbit-common
+    container_name: at-rabbit-2
+    hostname: rabbit-2
+    depends_on:
+      rabbit-1:
+        condition: service_healthy
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbit2-data:/var/lib/rabbitmq
+    # Se une al clúster de rabbit-1. El servidor corre en segundo plano y `wait`
+    # mantiene el contenedor atado a él. Reset borra el estado local del nodo 2,
+    # que es lo correcto al unirse: el estado autoritativo vive en rabbit-1.
+    # Si la unión falla, arranca igual en solitario en vez de morir.
+    #
+    # Nota de guerra: la versión anterior terminaba en `tail -f /var/log/...`,
+    # pero la imagen oficial escribe los logs a stdout y no a archivos. El tail
+    # fallaba, el contenedor moría justo después de unirse, y RabbitMQ 4 (que
+    # usa Khepri/Raft para los metadatos) se quedaba sin quórum: declarar un
+    # exchange colgaba hasta agotar el timeout con INTERNAL_ERROR.
+    command: >
+      bash -c "
+        rabbitmq-server &
+        sleep 25;
+        (rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster rabbit@rabbit-1 && rabbitmqctl start_app) || rabbitmqctl start_app;
+        rabbitmqctl cluster_status;
+        wait
+      "
+
+volumes:
+  rabbit1-data:
+  rabbit2-data:
