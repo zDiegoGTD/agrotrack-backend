@@ -1,0 +1,28 @@
+# El frontend vive en su propio repositorio (agrotrack-frontend), pero la
+# carpeta se mantiene aqui al lado porque infra/apps/compose.yml construye
+# su imagen y subir.ps1 la empaqueta junto al backend.
+/frontend-agrotrack/
+
+# Carpeta temporal de la migracion a monorepo
+/.migracion/
+
+# Respaldos
+*.zip
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Secretos y valores vivos del despliegue: nunca se versionan
+infra/.env
+infra/.env.aws
+infra/.aws-hosts.json
+infra/local/logs/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
