@@ -84,4 +84,4 @@ esta nota lo que importa es la cadena de identidad de punta a punta.
 6. Quién es tu pareja (hay que darle acceso a los repos).
 
 **Tuyo (GitHub):** `git push` de todo y crear los 2 repos que faltan
-(`ms-agrotrack-mq-admin`, `ms-agrotrack-kafka-admin`). Ver `05-crear-remotos.md`.
+(`ms-agrotrack-mq-admin`, `ms-agrotrack-kafka-admin`). Ver `05-repositorios.md`.
