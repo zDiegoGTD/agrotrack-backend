@@ -106,7 +106,7 @@ $appsIp = $hosts.apps.publica
 function Http($url, $esperado, $texto) {
   try { $c = (Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop).StatusCode }
   catch { $c = $_.Exception.Response.StatusCode.value__ }
-  if ($c -eq $esperado) { Ok "$texto ($c)" } else { Falla "$texto: esperaba $esperado, llego $c" }
+  if ($c -eq $esperado) { Ok "$texto ($c)" } else { Falla "${texto}: esperaba $esperado, llego $c" }
 }
 Http "http://${appsIp}:8081/actuator/health" 200 'BFF sano'
 if ($gw) {
@@ -114,7 +114,10 @@ if ($gw) {
   Http "$gw/api/me" 401 'API Gateway rechaza sin token'
 }
 
-$estado = & ssh @ssh "ec2-user@$($hosts.apps.publica)" 'docker ps --format "{{.Names}}: {{.Status}}" | sort' 2>&1
+# El formato va con comillas simples en el lado remoto: las dobles las
+# expandiria PowerShell antes de enviarlas y ssh recibiria un comando roto.
+$formato = "docker ps --format '{{.Names}}: {{.Status}}' | sort"
+$estado = & ssh @ssh "ec2-user@$($hosts.apps.publica)" $formato 2>&1
 Write-Host "`n   Contenedores en apps:"; $estado | ForEach-Object { Write-Host "     $_" }
 
 Write-Host "`nAplicacion: $gw" -ForegroundColor Green
