@@ -7,9 +7,11 @@
 | **`github.com/zDiegoGTD/agrotrack-backend`** | Los 8 microservicios, `infra` y `docs` |
 | **`github.com/zDiegoGTD/frontend-agrotrack`** | La aplicación Angular |
 
-Son los dos que se entregan en AVA y por correo al docente. Ambos privados:
-hay que **darle acceso al profesor y a la pareja** en *Settings →
-Collaborators → Add people*.
+Son los dos que se entregan en AVA y por correo al docente. Ambos **publicos** desde el 2026-09-08, asi
+que el docente los abre sin invitacion. Los secretos (credenciales de AWS,
+IPs vivas, `.env`) quedan fuera por `.gitignore`.
+
+**Pareja:** Lian Peralta, con acceso a ambos repositorios.
 
 ## Por qué dos y no once
 

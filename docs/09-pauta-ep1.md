@@ -3,11 +3,9 @@
 Fuente: `EP1_DSY1107_Estudiante_encargo.pdf`. Encargo = **40%** de la EP1, que a
 su vez pesa **16%** de la asignatura. **En parejas.** Dos semanas.
 
-> ⚠️ **La pauta nombra el sistema "Pedidos360", no AgroTrack.** Casi seguro es
-> una plantilla genérica y cada pareja tiene su caso (el .docx de AgroTrack
-> venía con metadatos de "Caso 7"), pero hay que **confirmarlo con el docente**.
-> Si el caso fuera Pedidos360, la arquitectura sirve entera —pedidos y entregas
-> son la misma máquina de estados— pero habría que renombrar el dominio.
+> **Resuelto el 2026-09-08:** la pauta nombraba "Pedidos360" porque es una
+> plantilla comun; a cada grupo se le asigno un caso distinto. El nuestro es
+> **AgroTrack**, confirmado con el docente.
 
 ## Los dos indicadores que puntúan
 
