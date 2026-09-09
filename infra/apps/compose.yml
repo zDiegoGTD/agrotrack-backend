@@ -1,0 +1,161 @@
+# ec2-apps — los microservicios (enunciado, seccion 7) + frontend.
+# Postgres, Rabbit y Kafka NO viven aqui: Postgres en esta misma EC2 o en
+# RDS (POSTGRES_HOST), Rabbit en ec2-mq y Kafka en ec2-kafka.
+#
+# Arrancar:  docker compose --env-file ../.env.aws -f compose.yml up -d --build
+name: agrotrack-apps
+
+x-svc: &svc
+  restart: unless-stopped
+  environment: &svc-env
+    SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-aws}
+    # Identidad: todos validan el MISMO issuer y audience (Azure AD)
+    AZURE_ISSUER_URI: ${AZURE_ISSUER_URI}
+    AZURE_API_CLIENT_ID: ${AZURE_API_CLIENT_ID}
+    KAFKA_BOOTSTRAP: ${KAFKA_BOOTSTRAP}
+    RABBITMQ_HOST: ${RABBITMQ_HOST}
+    RABBITMQ_USER: ${RABBITMQ_USER}
+    RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    SERVER_PORT: 8080
+  healthcheck:
+    test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness || exit 1"]
+    interval: 15s
+    timeout: 5s
+    retries: 20
+    start_period: 60s
+
+services:
+  # ---- base de datos: una instancia, una base por servicio (D1) ----
+  postgres:
+    image: postgres:16-alpine
+    container_name: at-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../local/init-postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ---- administradores de topologia: arrancan primero ----
+  mq-admin:
+    <<: *svc
+    build: ../../ms-agrotrack-mq-admin
+    container_name: at-mq-admin
+    ports: ["8087:8080"]
+
+  kafka-admin:
+    <<: *svc
+    build: ../../ms-agrotrack-kafka-admin
+    container_name: at-kafka-admin
+    ports: ["8088:8080"]
+    environment:
+      <<: *svc-env
+      KAFKA_REPLICAS: ${KAFKA_REPLICAS:-3}
+
+  # ---- dominio ----
+  catalog:
+    <<: *svc
+    build: ../../ms-agrotrack-catalog
+    container_name: at-catalog
+    ports: ["8083:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_catalog
+      SPRING_DATASOURCE_USERNAME: agro_catalog
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_CATALOG_PASSWORD}
+
+  deliveries:
+    <<: *svc
+    build: ../../ms-agrotrack-deliveries
+    container_name: at-deliveries
+    ports: ["8082:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      mq-admin: { condition: service_healthy }
+      kafka-admin: { condition: service_healthy }
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_deliveries
+      SPRING_DATASOURCE_USERNAME: agro_deliveries
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_DELIVERIES_PASSWORD}
+      CATALOG_URL: http://catalog:8080
+
+  # Sin DB y sin puerto publico: solo consume de RabbitMQ (enunciado, seccion 5).
+  notify:
+    <<: *svc
+    build: ../../ms-agrotrack-notify
+    container_name: at-notify
+    depends_on:
+      mq-admin: { condition: service_healthy }
+    environment:
+      <<: *svc-env
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      NOTIFY_SALIDA_DIR: /salida
+    volumes:
+      - notify-salida:/salida
+
+  audit:
+    <<: *svc
+    build: ../../ms-agrotrack-audit
+    container_name: at-audit
+    ports: ["8086:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka-admin: { condition: service_healthy }
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_audit
+      SPRING_DATASOURCE_USERNAME: agro_audit
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_AUDIT_PASSWORD}
+
+  report:
+    <<: *svc
+    build: ../../ms-agrotrack-report
+    container_name: at-report
+    ports: ["8085:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka-admin: { condition: service_healthy }
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_report
+      SPRING_DATASOURCE_USERNAME: agro_report
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_REPORT_PASSWORD}
+
+  # ---- entrada ----
+  bff:
+    <<: *svc
+    build: ../../ms-agrotrack-bff
+    container_name: at-bff
+    ports: ["8081:8080"]     # el unico que expone el API Gateway
+    environment:
+      <<: *svc-env
+      DELIVERIES_URL: http://deliveries:8080
+      CATALOG_URL: http://catalog:8080
+      REPORT_URL: http://report:8080
+      AUDIT_URL: http://audit:8080
+      MQ_ADMIN_URL: http://mq-admin:8080
+      KAFKA_ADMIN_URL: http://kafka-admin:8080
+      CORS_ORIGENES: ${CORS_ORIGENES}
+
+  frontend:
+    build: ../../frontend-agrotrack
+    container_name: at-frontend
+    restart: unless-stopped
+    ports: ["80:80"]
+
+volumes:
+  notify-salida:
+  postgres-data:
