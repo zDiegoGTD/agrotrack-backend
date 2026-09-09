@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AZURE_ISSUER_URI}
+          # v1: aud = api://<clientId>; v2 (requestedAccessTokenVersion=2): aud = <clientId>. Se aceptan ambos.
+          audiences: api://${AZURE_API_CLIENT_ID},${AZURE_API_CLIENT_ID}
