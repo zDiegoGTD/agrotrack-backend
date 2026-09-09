@@ -24,8 +24,12 @@ escribir `audit` y `report`: costó media hora.
 dueño de sus tablas y nadie más las toca") lo dan la base y el rol separados.
 Cuatro instancias serían cuatro contenedores más sin ganancia real.
 
-**Si la pauta exige Oracle:** el historial de git tiene la versión Oracle de
-catalog y deliveries funcionando (commits anteriores al 2026-09-07 tarde).
+**Confirmado el 2026-09-08:** el docente ratificó que el motor es flexible —
+al curso no se le entregaron cuentas de Oracle. PostgreSQL deja de ser una
+desviación del enunciado y pasa a ser la elección aceptada.
+
+**Si aun así se exigiera Oracle:** el historial de git tiene la versión Oracle
+de catalog y deliveries funcionando (commits anteriores al 2026-09-07 tarde).
 
 ---
 
