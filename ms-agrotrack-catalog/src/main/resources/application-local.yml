@@ -1,0 +1,12 @@
+# Desarrollo en el PC: infra/local/compose.yml levantado.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/agro_catalog
+    username: agro_catalog
+    password: agro_catalog
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Tokens emitidos con infra/local/jwt/mint.mjs
+          public-key-location: classpath:jwt/local-public.pem
