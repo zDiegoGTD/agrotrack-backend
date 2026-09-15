@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
@@ -27,9 +29,16 @@ public class ReenviadorHttp implements Reenviador {
     private static final Logger log = LoggerFactory.getLogger(ReenviadorHttp.class);
 
     private final RestClient rest;
+    private final ObjectMapper objectMapper;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ReenviadorHttp(RestClient.Builder builder, ObjectMapper objectMapper) {
+        this.rest = builder.build();
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
+    }
 
     public ReenviadorHttp(RestClient.Builder builder) {
-        this.rest = builder.build();
+        this(builder, new ObjectMapper());
     }
 
     @Override
@@ -55,11 +64,17 @@ public class ReenviadorHttp implements Reenviador {
             ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
                     "El servicio " + destino.getHost() + ":" + destino.getPort() + " no responde");
             p.setTitle("Service Unavailable");
-            String json = "{\"type\":\"about:blank\",\"title\":\"Service Unavailable\",\"status\":503,\"detail\":\""
-                    + p.getDetail().replace("\"", "'") + "\"}";
+            p.setType(URI.create("about:blank"));
+            byte[] bodyBytes;
+            try {
+                bodyBytes = objectMapper.writeValueAsBytes(p);
+            } catch (Exception ex) {
+                log.error("Error serializando ProblemDetail en ReenviadorHttp", ex);
+                bodyBytes = "{\"type\":\"about:blank\",\"title\":\"Service Unavailable\",\"status\":503}".getBytes(StandardCharsets.UTF_8);
+            }
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .contentType(MediaType.APPLICATION_PROBLEM_JSON)
-                    .body(json.getBytes(StandardCharsets.UTF_8));
+                    .body(bodyBytes);
         }
     }
 }
