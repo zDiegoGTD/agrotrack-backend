@@ -46,7 +46,9 @@ Aws apigatewayv2 update-api --api-id $apiId --cors-configuration "AllowOrigins=$
 
 # Integracion HTTP proxy hacia el BFF
 $intId = (Aws apigatewayv2 get-integrations --api-id $apiId --query 'Items[0].IntegrationId' --output text).Trim()
-$uri = "http://${appsIp}:8081/{proxy}"
+# {proxy} captura solo lo que va DESPUES de /api/: hay que volver a poner el
+# prefijo, o el BFF recibe /report/kpis, no calza con su matriz y responde 403.
+$uri = "http://${appsIp}:8081/api/{proxy}"
 if (-not $intId -or $intId -eq 'None') {
   $intId = (Aws apigatewayv2 create-integration --api-id $apiId --integration-type HTTP_PROXY --integration-method ANY --integration-uri $uri --payload-format-version 1.0 --query 'IntegrationId' --output text).Trim()
   Write-Host "   integracion creada $intId"
