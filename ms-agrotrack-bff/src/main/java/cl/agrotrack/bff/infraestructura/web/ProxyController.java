@@ -17,8 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,10 +43,17 @@ public class ProxyController {
 
     private final Servicios servicios;
     private final Reenviador reenviador;
+    private final ObjectMapper objectMapper;
 
-    public ProxyController(Servicios servicios, Reenviador reenviador) {
+    @org.springframework.beans.factory.annotation.Autowired
+    public ProxyController(Servicios servicios, Reenviador reenviador, ObjectMapper objectMapper) {
         this.servicios = servicios;
         this.reenviador = reenviador;
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
+    }
+
+    public ProxyController(Servicios servicios, Reenviador reenviador) {
+        this(servicios, reenviador, new ObjectMapper());
     }
 
     @RequestMapping("/api/{servicio}/**")
@@ -87,12 +97,23 @@ public class ProxyController {
         return reenviador.reenviar(metodo, destino, cabeceras, cuerpo);
     }
 
-    private static ResponseEntity<byte[]> problema(HttpStatus status, String detalle) {
+    private ResponseEntity<byte[]> problema(HttpStatus status, String detalle) {
         ProblemDetail p = ProblemDetail.forStatusAndDetail(status, detalle);
-        String json = "{\"type\":\"about:blank\",\"title\":\"" + status.getReasonPhrase() + "\",\"status\":" + status.value()
-                + ",\"detail\":\"" + detalle.replace("\"", "'") + "\"}";
-        return ResponseEntity.status(status).header(HttpHeaders.CONTENT_TYPE, "application/problem+json")
-                .body(json.getBytes());
+        p.setTitle(status.getReasonPhrase());
+        p.setType(URI.create("about:blank"));
+        try {
+            byte[] jsonBytes = objectMapper.writeValueAsBytes(p);
+            return ResponseEntity.status(status)
+                    .header(HttpHeaders.CONTENT_TYPE, "application/problem+json")
+                    .body(jsonBytes);
+        } catch (Exception e) {
+            log.error("Error serializando ProblemDetail en ProxyController", e);
+            byte[] fallback = ("{\"type\":\"about:blank\",\"title\":\"" + status.getReasonPhrase()
+                    + "\",\"status\":" + status.value() + "}").getBytes(StandardCharsets.UTF_8);
+            return ResponseEntity.status(status)
+                    .header(HttpHeaders.CONTENT_TYPE, "application/problem+json")
+                    .body(fallback);
+        }
     }
 
     /** agrotrack.servicios.<nombre> = url base. */
