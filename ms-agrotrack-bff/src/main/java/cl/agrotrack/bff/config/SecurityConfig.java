@@ -1,5 +1,8 @@
 package cl.agrotrack.bff.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +10,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -27,14 +32,46 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    private final List<String> origenesCors;
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
-    public SecurityConfig(@Value("${agrotrack.cors.origenes}") String origenes) {
-        this.origenesCors = Arrays.stream(origenes.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
+    private final List<String> origenesCors;
+    private final boolean esProduccion;
+
+    @Autowired(required = false)
+    private RateLimiterFilter rateLimiterFilter;
+
+    @Autowired(required = false)
+    private LoggingFilter loggingFilter;
+
+    public SecurityConfig(
+            @Value("${agrotrack.cors.origenes}") String origenes,
+            @Value("${spring.profiles.active:local}") String activeProfile) {
+        this.esProduccion = "prod".equalsIgnoreCase(activeProfile) || "production".equalsIgnoreCase(activeProfile);
+        List<String> raw = Arrays.stream(origenes.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
+        this.origenesCors = validarYFiltrarOrigenes(raw, this.esProduccion);
+        if (this.esProduccion) {
+            log.info("Perfil de produccion activo: CORS restringido estrictamente a HTTPS ({})", this.origenesCors);
+        }
+    }
+
+    public static List<String> validarYFiltrarOrigenes(List<String> origenes, boolean esProduccion) {
+        if (!esProduccion) {
+            return origenes;
+        }
+        return origenes.stream()
+                .filter(o -> o.toLowerCase().startsWith("https://"))
+                .toList();
     }
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        if (loggingFilter != null) {
+            http.addFilterBefore(loggingFilter, HeaderWriterFilter.class);
+        }
+        if (rateLimiterFilter != null) {
+            http.addFilterBefore(rateLimiterFilter, UsernamePasswordAuthenticationFilter.class);
+        }
+
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsSource()))
@@ -81,5 +118,13 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", c);
         return source;
+    }
+
+    public List<String> getOrigenesCors() {
+        return origenesCors;
+    }
+
+    public boolean isEsProduccion() {
+        return esProduccion;
     }
 }
