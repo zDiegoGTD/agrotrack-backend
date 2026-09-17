@@ -1,6 +1,9 @@
 package cl.agrotrack.bff.infraestructura.web;
 
 import cl.agrotrack.bff.config.SecurityConfig;
+import cl.agrotrack.bff.cuenta.CuentaUsuario;
+import cl.agrotrack.bff.cuenta.EstadoCuentas;
+import org.junit.jupiter.api.BeforeEach;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -49,6 +52,17 @@ class JsonInjectionSecurityTest {
 
     @MockitoBean
     private Reenviador reenviador;
+
+    // La segunda capa (cuenta activa) no es lo que prueba esta clase: cuenta ACTIVA.
+    @MockitoBean
+    private EstadoCuentas cuentas;
+
+    @BeforeEach
+    void cuentaActiva() {
+        CuentaUsuario activa = new CuentaUsuario(1L, "ACTIVO", null, null);
+        when(cuentas.consultar(any(), any())).thenReturn(activa);
+        when(cuentas.sincronizar(any(), any())).thenReturn(activa);
+    }
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 

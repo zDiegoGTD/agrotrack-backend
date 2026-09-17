@@ -1,6 +1,8 @@
 package cl.agrotrack.bff.infraestructura.web;
 
 import cl.agrotrack.bff.config.SecurityConfig;
+import cl.agrotrack.bff.cuenta.CuentaUsuario;
+import cl.agrotrack.bff.cuenta.EstadoCuentas;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,11 +45,16 @@ class BffSeguridadTest {
 
     @Autowired MockMvc mvc;
     @MockitoBean Reenviador reenviador;
+    @MockitoBean EstadoCuentas cuentas;
 
     @BeforeEach
     void reenviadorResponde() {
         when(reenviador.reenviar(any(), any(), any(), any()))
                 .thenReturn(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("{\"ok\":true}".getBytes()));
+        // Estas pruebas son de la matriz de roles: la cuenta esta activa.
+        CuentaUsuario activa = new CuentaUsuario(1L, "ACTIVO", null, null);
+        when(cuentas.consultar(any(), any())).thenReturn(activa);
+        when(cuentas.sincronizar(any(), any())).thenReturn(activa);
     }
 
     private static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor con(String... roles) {
@@ -148,6 +155,8 @@ class BffSeguridadTest {
                 .andExpect(jsonPath("$.nombre").value("Diego"))
                 .andExpect(jsonPath("$.email").value("diego@agrotrack.local"))
                 .andExpect(jsonPath("$.roles[0]").value("ADMIN"))
-                .andExpect(jsonPath("$.roles[1]").value("OPERADOR"));
+                .andExpect(jsonPath("$.roles[1]").value("OPERADOR"))
+                .andExpect(jsonPath("$.estado").value("ACTIVO"))
+                .andExpect(jsonPath("$.usuarioId").value(1));
     }
 }

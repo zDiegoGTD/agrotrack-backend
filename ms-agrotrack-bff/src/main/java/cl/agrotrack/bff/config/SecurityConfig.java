@@ -1,5 +1,8 @@
 package cl.agrotrack.bff.config;
 
+import cl.agrotrack.bff.cuenta.EstadoCuentas;
+import cl.agrotrack.bff.cuenta.FiltroCuentaActiva;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +13,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -68,8 +72,12 @@ public class SecurityConfig {
                 .toList();
     }
 
+    /**
+     * Segunda capa, despues de la matriz de roles: FiltroCuentaActiva exige
+     * ademas que la cuenta este ACTIVA en ms-agrotrack-users.
+     */
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http, EstadoCuentas cuentas, ObjectMapper json) throws Exception {
         if (loggingFilter != null) {
             http.addFilterBefore(loggingFilter, HeaderWriterFilter.class);
         }
@@ -104,10 +112,19 @@ public class SecurityConfig {
                         // Estado de la mensajeria: paneles de administracion
                         .requestMatchers(HttpMethod.GET, "/api/mq/**", "/api/kafka/**").hasAnyRole("ADMIN", "OPERADOR")
 
+                        // Usuarios: la ficha propia la edita el productor; administrar es del admin.
+                        // POST /api/users/sincronizar no figura: lo llama el BFF desde /api/me.
+                        .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/perfil").hasAnyRole("ADMIN", "CLIENTE")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/estado").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/*").hasRole("ADMIN")
+
                         // Lo que no esta en la matriz no pasa, tenga el rol que tenga
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(new JwtRolesConverter())))
+                // Despues de la matriz: solo se consulta la cuenta de quien ya tiene el rol.
+                .addFilterAfter(new FiltroCuentaActiva(cuentas, json), AuthorizationFilter.class)
                 .build();
     }
 

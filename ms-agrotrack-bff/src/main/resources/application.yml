@@ -13,6 +13,7 @@ agrotrack:
     audit: ${AUDIT_URL:http://localhost:8086}
     mq: ${MQ_ADMIN_URL:http://localhost:8087}
     kafka: ${KAFKA_ADMIN_URL:http://localhost:8088}
+    users: ${USERS_URL:http://localhost:8089}
   cors:
     origenes: ${CORS_ORIGENES:http://localhost:4200}
 
