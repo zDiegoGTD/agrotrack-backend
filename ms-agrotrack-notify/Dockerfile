@@ -12,6 +12,10 @@ RUN mvn -B -DskipTests package
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
+# Tickets y guias PDF. Docker crea el volumen con el dueño que tiene la
+# carpeta en la imagen: sin esto /salida queda de root, el usuario app no
+# puede escribir y cada comando termina en la DLQ.
+RUN mkdir -p /salida && chown app:app /salida
 COPY --from=build /app/target/*.jar app.jar
 USER app
 EXPOSE 8080
