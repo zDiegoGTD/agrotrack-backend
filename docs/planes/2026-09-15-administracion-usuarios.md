@@ -1525,7 +1525,7 @@ class UsuarioControllerTest {
     private static JwtRequestPostProcessor con(String oid, String... roles) {
         return jwt().jwt(j -> j.claim("oid", oid).claim("name", "N " + oid)
                         .claim("preferred_username", oid + "@agrotrack.cl").claim("roles", List.of(roles)))
-                .authorities(Arrays.stream(roles).map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList());
+                .authorities(Arrays.stream(roles).<GrantedAuthority>map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList());
     }
 
     private static UsuarioResponse usuario(long id, EstadoUsuario estado) {
