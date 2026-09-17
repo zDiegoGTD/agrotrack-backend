@@ -86,6 +86,19 @@ $invoke = (Aws apigatewayv2 get-api --api-id $apiId --query 'ApiEndpoint' --outp
 # origen HTTPS por si se sirve el frontend tambien desde la EC2.
 Aws apigatewayv2 update-api --api-id $apiId --cors-configuration "AllowOrigins=$invoke,http://localhost:4200,AllowMethods=GET,POST,PUT,DELETE,OPTIONS,AllowHeaders=Authorization,Content-Type,Accept,MaxAge=3600" | Out-Null
 
+# Aunque sea el mismo origen, el navegador manda la cabecera Origin en todo
+# POST y PUT, y el CorsFilter del BFF rechaza con 403 cualquier origen que no
+# este en CORS_ORIGENES. Sin esta linea las lecturas funcionan y toda
+# escritura falla con "Tu rol no permite esta accion", aunque el rol este bien.
+$envAws = Join-Path $root 'infra\.env.aws'
+if (Test-Path $envAws) {
+  $lineas = Get-Content $envAws
+  $actual = ($lineas | Where-Object { $_ -like 'CORS_ORIGENES=*' }) -replace '^CORS_ORIGENES=', ''
+  $origenes = @($invoke) + @($actual -split ',' | Where-Object { $_ -and $_ -ne $invoke })
+  ($lineas | ForEach-Object { if ($_ -like 'CORS_ORIGENES=*') { "CORS_ORIGENES=$($origenes -join ',')" } else { $_ } }) | Set-Content $envAws -Encoding UTF8
+  Write-Host "   .env.aws: CORS_ORIGENES=$($origenes -join ',')  (redesplegar apps para aplicarlo)"
+}
+
 # El frontend se reconfigura: misma URL para la app y para el API
 $envProd = Join-Path $root 'frontend-agrotrack\src\environments\environment.prod.ts'
 $clientId = (Select-String -Path $envProd -Pattern "clientId: '([^']+)'").Matches[0].Groups[1].Value
