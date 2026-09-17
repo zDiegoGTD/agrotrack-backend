@@ -36,6 +36,23 @@ class CorsSecurityTest {
     }
 
     @Test
+    @DisplayName("Test 4: El perfil aws (el del despliegue real) también exige HTTPS")
+    void perfilAwsEsProduccion() {
+        SecurityConfig configAws = new SecurityConfig(
+                "https://85v8hc0ry6.execute-api.us-east-1.amazonaws.com, http://54.84.179.128", "aws");
+
+        assertThat(configAws.isEsProduccion()).isTrue();
+        assertThat(configAws.getOrigenesCors()).containsExactly("https://85v8hc0ry6.execute-api.us-east-1.amazonaws.com");
+    }
+
+    @Test
+    @DisplayName("Test 5: Con varios perfiles activos basta con que uno sea de producción")
+    void variosPerfiles() {
+        assertThat(new SecurityConfig("https://a.cl", "debug, aws").isEsProduccion()).isTrue();
+        assertThat(new SecurityConfig("http://localhost:4200", "local,debug").isEsProduccion()).isFalse();
+    }
+
+    @Test
     @DisplayName("Test 3: En producción con solo orígenes HTTPS, todos los orígenes seguros son admitidos")
     void soloOrigenesHttpsAceptadosEnProduccion() {
         String origenesHttps = "https://agrotrack.cl, https://portal.agrotrack.cl";

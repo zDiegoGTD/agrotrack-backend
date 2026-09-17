@@ -75,6 +75,24 @@ class RateLimiterSecurityTest {
     }
 
     @Test
+    @DisplayName("Test 4: Inventar el primer valor de X-Forwarded-For no evade el límite")
+    void xForwardedForFalsoNoEvadeElLimite() throws Exception {
+        // El API Gateway AGREGA la IP real al final de lo que mande el cliente.
+        // Si se tomara el primer valor, cambiarlo en cada peticion daria un
+        // contador nuevo cada vez y el limite nunca se alcanzaria.
+        MockHttpServletResponse ultima = null;
+        for (int i = 1; i <= 101; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/deliveries");
+            request.setRemoteAddr("10.10.0.5");
+            request.addHeader("X-Forwarded-For", "1.2.3." + i + ", 203.0.113.9");
+            ultima = new MockHttpServletResponse();
+            rateLimiter.doFilterInternal(request, ultima, new MockFilterChain());
+        }
+
+        assertThat(ultima.getStatus()).isEqualTo(429);
+    }
+
+    @Test
     @DisplayName("Test 3: El límite por IP es aislado y no afecta a otras direcciones IP")
     void aislamientoPorIp() throws Exception {
         String ipBloqueada = "10.0.0.1";

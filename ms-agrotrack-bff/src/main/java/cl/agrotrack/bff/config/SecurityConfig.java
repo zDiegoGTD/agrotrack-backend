@@ -34,6 +34,8 @@ public class SecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
+    private static final java.util.Set<String> PERFILES_PRODUCCION = java.util.Set.of("prod", "production", "aws");
+
     private final List<String> origenesCors;
     private final boolean esProduccion;
 
@@ -46,7 +48,10 @@ public class SecurityConfig {
     public SecurityConfig(
             @Value("${agrotrack.cors.origenes}") String origenes,
             @Value("${spring.profiles.active:local}") String activeProfile) {
-        this.esProduccion = "prod".equalsIgnoreCase(activeProfile) || "production".equalsIgnoreCase(activeProfile);
+        // "aws" es el perfil del despliegue real; se aceptan varios perfiles separados por coma
+        this.esProduccion = Arrays.stream(activeProfile.split(","))
+                .map(String::trim)
+                .anyMatch(p -> PERFILES_PRODUCCION.contains(p.toLowerCase()));
         List<String> raw = Arrays.stream(origenes.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
         this.origenesCors = validarYFiltrarOrigenes(raw, this.esProduccion);
         if (this.esProduccion) {

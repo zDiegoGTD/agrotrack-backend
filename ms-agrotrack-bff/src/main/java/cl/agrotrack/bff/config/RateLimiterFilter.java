@@ -85,10 +85,17 @@ public class RateLimiterFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * El API Gateway agrega la IP real del cliente AL FINAL de X-Forwarded-For;
+     * lo que venga antes lo escribio el propio cliente y puede ser inventado.
+     * Tomar el primer valor permitiria cambiarlo en cada peticion y no llegar
+     * nunca al limite.
+     */
     private String extraerIpCliente(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
+            String[] saltos = xForwardedFor.split(",");
+            return saltos[saltos.length - 1].trim();
         }
         return request.getRemoteAddr() != null ? request.getRemoteAddr() : "127.0.0.1";
     }
