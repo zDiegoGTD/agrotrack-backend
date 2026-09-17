@@ -91,6 +91,22 @@ así, en mayúsculas.
 Para la demo hacen falta al menos cuatro cuentas (una por rol) o una cuenta con
 varios roles. En un tenant propio se crean usuarios en **Users → New user**.
 
+### Solo entra quien tiene un rol asignado
+
+**Enterprise applications → AgroTrack → Properties → Assignment required? →
+Yes → Save.**
+
+Sin esto, cualquier usuario del tenant puede iniciar sesión: obtiene un token
+**sin** el claim `roles`, AgroTrack lo registra como pendiente y, si alguien lo
+aprobara por error, podría leer lo que solo exige estar autenticado. Con
+*Assignment required*, Microsoft lo rechaza en su propia pantalla de login
+(`AADSTS50105`) y nunca llega a la aplicación.
+
+Las cuentas de fuera del tenant (Gmail, otras organizaciones) no pueden entrar
+si la app está registrada como *Single tenant*: se comprueba en **App
+registrations → AgroTrack → Authentication → Supported account types =
+Accounts in this organizational directory only**.
+
 ## 6. Tokens v2 (manifest)
 
 **Manifest** → buscar `"requestedAccessTokenVersion"` (o

@@ -10,3 +10,9 @@ spring:
 agrotrack:
   cors:
     origenes: ${CORS_ORIGENES}
+  seguridad:
+    # Ademas del rol: el token debe haberse emitido para usar esta API (claim scp)
+    scope-requerido: access_as_user
+  gateway:
+    # Lo agrega el API Gateway a cada llamada; sin el, el BFF niega (FiltroOrigenGateway)
+    secreto: ${GATEWAY_SECRETO:}

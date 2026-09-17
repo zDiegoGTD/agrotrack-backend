@@ -1,177 +1,154 @@
-# Checklist de la demostración (EP1)
+# Guion de la demostración (EP1)
 
-Los 7 puntos que hay que mostrar, en el orden en que conviene contarlos, con
-qué abrir en cada uno.
+Los 7 puntos de la pauta en el orden en que conviene contarlos, con qué abrir
+en cada uno. Duración estimada: 15 minutos.
 
-## Antes de empezar
+## Antes de empezar (10 min antes)
 
-1. Vocareum → **Start Lab** (verde) → **AWS**.
-2. EC2 → las 3 instancias en **Running**. Si estaban detenidas, dales 3 min:
-   Docker levanta todo solo.
-3. Comprobar: `http://54.84.179.128` carga, y
-   `http://54.84.179.128:8081/actuator/health` dice `UP`.
+1. Vocareum → **Start Lab** (punto verde) → pegar las credenciales en
+   `%USERPROFILE%\.aws\credentials`.
+2. Encender y comprobar todo:
+   ```powershell
+   cd C:\Users\deint\Desktop\AgroTrack\infra\aws; .\encender.ps1
+   ```
+   Tiene que terminar con `BFF sano`, `aplicacion por HTTPS` y `API Gateway rechaza sin token`.
+3. Dejar abiertas: el portal de Azure (Entra ID), la consola de AWS (API
+   Gateway y EC2), una PowerShell en `infra\aws` y **ventanas de incógnito**
+   para cada usuario.
 
-> Las IPs **públicas** de `ec2-kafka` y `ec2-mq` cambian cada vez que se
-> detienen. No importa: los servicios se hablan por IP **privada**, que no
-> cambia. Solo importa si necesitas entrar por SSH a esas dos.
+> Las IPs públicas de `ec2-kafka` y `ec2-mq` cambian en cada arranque;
+> `encender.ps1` las actualiza. Los servicios se hablan por IP privada.
 
 ---
 
 ## 5 · Tenant en IDaaS y usuarios registrados
 
-**Portal de Azure → Microsoft Entra ID → Información general.**
+**Portal de Azure → Microsoft Entra ID → Información general**: tenant
+**Mish**, Id. de inquilino, contador de usuarios.
 
-Muestra: nombre del tenant (**Mish**), Id. de inquilino, y el contador de
-**Usuarios**.
-
-→ **Usuarios**: se ven las cuatro cuentas creadas para el caso.
-→ **Aplicaciones empresariales → AgroTrack → Usuarios y grupos**: cada una con
-su rol (`ADMIN`, `OPERADOR`, `CLIENTE`, `AUDITOR`).
-→ **Registros de aplicaciones → AgroTrack → Roles de aplicación**: los cuatro
-roles definidos, con su *Valor* en mayúsculas — que es lo que viaja en el
-claim `roles` del token.
+- **Usuarios**: las cuentas del caso.
+- **Aplicaciones empresariales → AgroTrack → Usuarios y grupos**: cada cuenta
+  con su **App Role** (`Administrador`, `Jefe de acopio`, `Productor`, `Auditor`).
+- **Aplicaciones empresariales → AgroTrack → Propiedades → ¿Asignación
+  requerida? = Sí**: solo entra quien tiene un rol asignado.
+- **Registros de aplicaciones → AgroTrack**: *Roles de aplicación* (el valor
+  en mayúsculas viaja en el claim `roles`) y *Exponer una API* (scope
+  `access_as_user`).
 
 ## 1 · Instancia de API Manager en funcionamiento
 
-**API Gateway → APIs → `agrotrack-api`.**
-
-Muestra el estado y la **Invoke URL**
-(`https://85v8hc0ry6.execute-api.us-east-1.amazonaws.com`).
+**API Gateway → APIs → `agrotrack-api`**: estado y **Invoke URL**
+`https://85v8hc0ry6.execute-api.us-east-1.amazonaws.com`.
 
 ## 2 · Configuración que permite llamar al backend
 
 En la misma API:
 
-- **Routes**: `ANY /api/{proxy+}` (protegida) y `OPTIONS /api/{proxy+}` (sin
-  autorización, para el preflight CORS del navegador).
-- **Integrations**: HTTP proxy → `http://54.84.179.128:8081/{proxy}` — el BFF.
-- **CORS**: origen `http://54.84.179.128`, cabecera `Authorization`.
+- **Routes**: `ANY /api/{proxy+}` con el authorizer `azure-ad` y el scope
+  `access_as_user`; `OPTIONS /api/{proxy+}` sin autorización (preflight CORS);
+  `ANY /{proxy+}` y `GET /` sirven el frontend por HTTPS.
+- **Authorizers → `azure-ad`**: issuer `https://login.microsoftonline.com/<tenant>/v2.0`
+  y las dos audiencias (`api://<client-id>` y `<client-id>`).
+- **Integrations**: HTTP proxy al BFF (`:8081/api/{proxy}`) con la cabecera
+  `X-Origen-Gateway`, que hace del Gateway la única puerta al BFF.
 
-Vale la pena decir en voz alta: **solo el BFF está expuesto**. Los puertos
-8082–8088 de los servicios de dominio no se abren en el security group.
+## 4 · El API Manager valida el JWT: rechaza inválidas y acepta correctas
 
-## 4 · El API Manager valida el JWT
-
-**Sin token** — en cualquier terminal:
-
-```bash
-curl -i https://85v8hc0ry6.execute-api.us-east-1.amazonaws.com/api/me
+```powershell
+.\probar-jwt.ps1
 ```
-→ `401 Unauthorized`. Lo rechaza el Gateway; la petición **no llega** al BFF.
 
-**Con token inválido** (una firma cualquiera):
+Pide login con código de dispositivo y muestra una tabla:
 
-```bash
-curl -i -H "Authorization: Bearer eyJhbGciOiJub25lIn0.e30.x" https://85v8hc0ry6.execute-api.us-east-1.amazonaws.com/api/me
-```
-→ `401`.
+| Caso | Respuesta |
+|---|---|
+| Sin token | 401 |
+| Texto que no es un JWT | 401 |
+| Claims de Azure con firma inventada | 401 |
+| **Token real de Azure** | **200** |
+| Token real con el rol cambiado a mano | 401 |
+| Token real directo a la EC2, sin Gateway | 403 `ORIGEN_NO_PERMITIDO` |
 
-**Authorization → `azure-ad`**: enseña issuer
-(`https://login.microsoftonline.com/74c11418-.../v2.0`) y las dos audiencias.
+Lo que conviene decir: *el Gateway valida firma, emisor, audiencia, vigencia y
+scope; el BFF lo vuelve a validar y además autoriza por rol. Y nadie puede
+saltarse el Gateway yendo directo a la máquina.*
 
-**Con token válido**: el punto 3, abajo.
+Para mostrar la validación del BFF en el código: `ValidacionJwtTest` (12 casos
+con tokens firmados de verdad).
 
 ## 6 · El frontend usa OAuth 2.0 / OIDC
 
-Abre `http://54.84.179.128` → «Iniciar sesión con Microsoft».
-
-Con las **DevTools abiertas en Network** antes de pulsar, se ve el flujo:
+Incógnito → la Invoke URL → **Iniciar sesión con Microsoft**, con las
+**DevTools en Network** abiertas antes de pulsar:
 
 1. Redirección a `login.microsoftonline.com/.../oauth2/v2.0/authorize` con
    `response_type=code`, `code_challenge` (**PKCE**) y `scope=api://.../access_as_user`.
-2. Login del usuario.
-3. Vuelta a `http://54.84.179.128/#code=...`.
-4. `POST .../oauth2/v2.0/token` → **access token**.
+2. Login.
+3. `POST .../oauth2/v2.0/token` → access token.
 
-Pega el token en [jwt.ms](https://jwt.ms) y muestra los claims: `iss` (tu
-tenant, v2.0), `aud` (el client id del API), `roles`, `oid`, `exp`.
+Ya dentro: **Mi sesión** muestra los claims del token (roles, scopes, emisor,
+audiencia, vencimiento) y explica quién valida qué.
 
 ## 3 · El frontend consume los endpoints a través del API Manager
 
-Ya dentro de la aplicación, en **Network**: todas las llamadas van a
-`85v8hc0ry6.execute-api.us-east-1.amazonaws.com/api/...`, **ninguna** a la IP
-de la EC2. Cada una lleva `Authorization: Bearer ...` — lo pone el
-**MsalInterceptor**, no código propio.
+En **Network**: todas las llamadas van a `.../api/...` de la Invoke URL, cada
+una con `Authorization: Bearer ...` — lo pone el **MsalInterceptor**.
 
-Y ahí se demuestra el "acepta las correctas" del punto 4: mismo endpoint que
-antes daba 401, ahora responde 200.
+En **Mi sesión → Probar todo**: llamadas reales a seis endpoints con la
+respuesta esperada según el rol (200 o 403) y la recibida.
 
-**La autorización por rol se ve sola** si entras con distintos usuarios:
+**La autorización por rol**, entrando con cada usuario:
 
-| Entras como | Qué ves |
-|---|---|
-| Productor (CLIENTE) | Solo sus entregas. Sin Reportería ni Auditoría en el menú |
-| Jefe de acopio (OPERADOR) | Entregas por recibir y en clasificación; botones de cambio de estado |
-| Auditor (AUDITOR) | Solo Auditoría. `GET /api/report/kpis` le da **403** |
-| Admin (ADMIN) | KPIs, catálogo, todo |
-
-Un momento que luce: entra como **Auditor** y pide reportería a mano →
-`403 Forbidden` en `problem+json`. Eso es el indicador del 40% en vivo.
+| Entras como | Menú | Prueba de rechazo |
+|---|---|---|
+| Productor (CLIENTE) | Inicio, Entregas, Mi ficha | Mi sesión → reportería da 403 |
+| Jefe de acopio (OPERADOR) | Inicio, Entregas, Catálogo | avanza estados; no crea productos |
+| Auditor (AUDITOR) | Inicio, Auditoría | solo lectura |
+| Admin (ADMIN) | todo, más Usuarios | — |
 
 **La aprobación de cuentas** (segunda capa, además del rol):
 
-1. Entra primero con tu cuenta de administrador: al ser el primer admin queda
-   **activa sola** (`aprobado_por = sistema`).
-2. Entra con **Productor Demo** en otra ventana de incógnito: cae en
-   **"Tu cuenta espera aprobación"** aunque su token trae `CLIENTE`.
-   En Network, cualquier `/api/**` le da `403` con `codigo: CUENTA_PENDIENTE`.
-3. Como admin, en **Usuarios** aparece pendiente: **Aprobar**.
-4. El productor pulsa **Volver a comprobar** y entra.
+1. Entra un usuario nuevo del tenant → **"Tu cuenta espera aprobación"**,
+   aunque su token trae rol. En Network: `403` con `codigo: CUENTA_PENDIENTE`.
+2. El admin, en **Usuarios → Pendientes**, pulsa **Aprobar**.
+3. El usuario pulsa **Volver a comprobar** y entra.
 
-Lo que conviene decir: *el rol lo pone Azure; si la cuenta puede usar el
-sistema lo decide AgroTrack*.
+*El rol lo pone Azure; si la cuenta puede usar el sistema lo decide AgroTrack.*
 
 ## 7 · Backend y frontend desplegados, activos e integrados
 
-**En AWS**, EC2 → las 3 instancias, con sus tipos y la IP elástica.
-
-**Por SSH**, en cada una:
+**EC2**: las 3 instancias y la IP elástica de apps. Por SSH:
 
 ```bash
-ssh -i ~/.ssh/vockey.pem ec2-user@54.84.179.128 'docker ps'
+ssh -i ~/.ssh/vockey.pem ec2-user@54.84.179.128 'docker ps --format "{{.Names}}: {{.Status}}"'
 ```
 
-- `ec2-apps`: Postgres + 8 servicios + frontend.
-- `ec2-mq`: 2 nodos de RabbitMQ. `docker exec at-rabbit-1 rabbitmqctl cluster_status`
-- `ec2-kafka`: 3 Zookeeper + 3 brokers + UI.
+- `ec2-apps`: PostgreSQL + 9 microservicios + frontend, todos `healthy`.
+- `ec2-mq`: RabbitMQ en clúster de 2 nodos.
+- `ec2-kafka`: 3 ZooKeeper + 3 brokers (réplica 3) + Kafka UI.
 
-**Integrados de verdad** (esto es lo que separa "desplegado" de "funcionando"):
-registra una entrega en el frontend y muéstrala llegar a los tres lados —
+**Integrados de verdad**: registrar una entrega como Productor, avanzarla como
+Jefe de acopio y mostrarla llegar a todos lados:
 
-- **Auditoría** en la propia app: el timeline con los eventos en orden.
-- **Kafka UI**: `http://<ip-pública-kafka>:8080` → tópico `deliveries.events`.
-- **RabbitMQ**: `http://<ip-pública-mq>:15672` → las 6 colas, con consumidores.
+- **Auditoría** (como Auditor): la línea de tiempo con cada evento, quién y cuándo.
+- **Reportería** (como Admin): KPIs actualizados.
+- **Base de datos**: la tabla `usuario` antes y después de aprobar a alguien:
+  ```bash
+  ssh -i ~/.ssh/vockey.pem ec2-user@54.84.179.128 -t "docker exec -it at-postgres psql -U agro_users -d agro_users -c 'SELECT nombre, estado, rol_ultimo_token, aprobado_por FROM usuario'"
+  ```
 
-## Prueba automática (opcional, y luce)
+## Prueba automática del flujo completo (opcional)
 
 ```powershell
-cd C:\Users\deint\Desktop\AgroTrack\infra\aws
 .\smoke-aws.ps1
 ```
 
-Pide login real con código de dispositivo y recorre el flujo completo contra
-el Gateway: 401 sin token, `/api/me`, catálogo, registrar, 409 al saltarse la
-recepción, recibir → baja la capacidad, clasificar, despachar, timeline, KPIs,
-topología. Todo en verde, en un minuto.
+Con un usuario con varios roles recorre: 401 sin token, catálogo, registrar,
+409 al saltarse la recepción, recibir (baja la capacidad), clasificar,
+despachar, línea de tiempo y KPIs.
 
----
+## Al terminar
 
-## Lo que hay que tener hecho en Azure antes
-
-En **Registros de aplicaciones → AgroTrack**:
-
-1. **Authentication** → *Single-page application* → Add URI:
-   `http://54.84.179.128` (sin esto el login no puede volver a la app).
-2. **Authentication** → *Allow public client flows* = **Sí** (solo si usarás
-   `smoke-aws.ps1`).
-3. **Manifiesto** → `requestedAccessTokenVersion` = `2`.
-
-En **Entra ID → Usuarios**, crear cuatro y asignarles rol en *Aplicaciones
-empresariales → AgroTrack → Usuarios y grupos*:
-
-| Usuario | Rol |
-|---|---|
-| `admin@MishDomain.onmicrosoft.com` | ADMIN |
-| `acopio@MishDomain.onmicrosoft.com` | OPERADOR |
-| `productor@MishDomain.onmicrosoft.com` | CLIENTE |
-| `auditor@MishDomain.onmicrosoft.com` | AUDITOR |
+```powershell
+.\apagar.ps1
+```

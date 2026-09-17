@@ -31,6 +31,8 @@ const payload = {
   name: `Usuario ${roles.join("/")} (local)`,
   preferred_username: `${oid}@agrotrack.local`,
   roles,
+  // Scope delegado, como en el token de Azure (en AWS el BFF lo exige)
+  scp: "access_as_user",
   iat: ahora,
   nbf: ahora,
   exp: ahora + 8 * 3600,

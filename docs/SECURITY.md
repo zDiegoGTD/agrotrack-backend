@@ -117,3 +117,22 @@ Antes de realizar `git commit` y solicitar un Pull Request, cada desarrollador d
 - [ ] **5. Logging limpio:** Las trazas no imprimen datos confidenciales ni tokens.
 - [ ] **6. Tests automatizados:** Se han escrito pruebas unitarias y de integración que validan tanto el camino feliz como las condiciones de error (códigos 400, 401, 403, 404, 429, 503).
 - [ ] **7. Suite en verde:** `./mvnw clean test` compila sin advertencias y el 100% de las pruebas finalizan con `BUILD SUCCESS`.
+
+---
+
+## 7. CONTROLES AGREGADOS DESPUÉS DE LA PRIMERA VERSIÓN DE ESTA GUÍA
+
+| Control | Dónde | Detalle |
+|---|---|---|
+| **Scope requerido** | API Gateway (ruta `ANY /api/{proxy+}`) y BFF (`ValidacionTokenConfig`) | Además del rol, el token debe traer `scp` = `access_as_user`. Sin él: 403 en el Gateway, 401 `SCOPE_INSUFICIENTE` en el BFF |
+| **Gateway como única puerta** | `FiltroOrigenGateway` | El Gateway agrega `X-Origen-Gateway` con un secreto; lo que llega directo a la EC2 recibe 403 `ORIGEN_NO_PERMITIDO`. Comparación en tiempo constante |
+| **Rechazos con motivo** | `RespuestasSeguridad` | 401/403 con `WWW-Authenticate` y `problem+json` con `codigo` (ver `00-decisiones.md`, D10) |
+| **Límite de peticiones no evadible** | `RateLimiterFilter` | La IP se toma del **último** valor de `X-Forwarded-For` (el que agrega el API Gateway); el primero lo escribe el cliente y se puede inventar |
+| **CORS solo HTTPS en AWS** | `SecurityConfig` | La restricción aplica a los perfiles `prod`, `production` **y `aws`** (el del despliegue real) |
+| **Cuenta aprobada** | `FiltroCuentaActiva` + `ms-agrotrack-users` | Token con rol **y** cuenta `ACTIVA`; si `users` no responde, 503 |
+| **Solo usuarios con rol** | Azure AD, *Assignment required* | Microsoft rechaza en el login a quien no tiene un App Role asignado |
+
+Nota sobre `RateLimiterFilter` y `LoggingFilter`: están registrados como
+`@Component` y además se agregan a la cadena de Spring Security. Aun así se
+ejecutan **una sola vez** por petición, porque heredan de
+`OncePerRequestFilter`, que marca la petición y se salta la segunda pasada.

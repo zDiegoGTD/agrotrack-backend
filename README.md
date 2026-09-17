@@ -3,7 +3,8 @@
 Plataforma de acopio y despacho de producción agrícola. Caso semestral de
 **Desarrollo Cloud Native I (DSY1107)**.
 
-El frontend Angular vive en su propio repositorio: **agrotrack-frontend**.
+El frontend Angular vive en su propio repositorio:
+[**frontend-agrotrack**](https://github.com/zDiegoGTD/frontend-agrotrack).
 
 ## Qué hay aquí
 
@@ -45,7 +46,19 @@ por qué. Después:
 - [`docs/02-contrato-de-eventos.md`](docs/02-contrato-de-eventos.md) — Kafka lleva hechos, RabbitMQ comandos
 - [`docs/07-azure-app-registration.md`](docs/07-azure-app-registration.md) — identidad
 - [`docs/08-aws-academy.md`](docs/08-aws-academy.md) — despliegue
+- [`docs/09-pauta-ep1.md`](docs/09-pauta-ep1.md) — qué pide la pauta y dónde se cumple
 - [`docs/10-checklist-demo.md`](docs/10-checklist-demo.md) — guion de la demostración
+
+## Seguridad en una línea por capa
+
+| Capa | Qué valida |
+|---|---|
+| Azure AD | Solo usuarios del tenant con un rol asignado pueden iniciar sesión |
+| API Gateway | Firma, emisor, audiencia, vigencia y scope `access_as_user`; agrega la cabecera que identifica al Gateway |
+| BFF | Solo acepta tráfico del Gateway; vuelve a validar el token; matriz de roles; cuenta aprobada en `ms-agrotrack-users`; límite de peticiones |
+| Cada microservicio | Valida el token otra vez y el rol en cada endpoint |
+
+Para demostrarlo en vivo contra AWS: `infra/aws/probar-jwt.ps1`.
 
 ## Tecnologías
 

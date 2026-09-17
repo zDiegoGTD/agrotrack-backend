@@ -44,18 +44,34 @@ if (-not $apiId -or $apiId -eq 'None') {
 # CORS: el navegador pregunta al Gateway, no al BFF
 Aws apigatewayv2 update-api --api-id $apiId --cors-configuration "AllowOrigins=$origen,http://localhost:4200,AllowMethods=GET,POST,PUT,DELETE,OPTIONS,AllowHeaders=Authorization,Content-Type,Accept,MaxAge=3600" | Out-Null
 
-# Integracion HTTP proxy hacia el BFF
-$intId = (Aws apigatewayv2 get-integrations --api-id $apiId --query 'Items[0].IntegrationId' --output text).Trim()
+# Secreto que el Gateway agrega a cada llamada al BFF (FiltroOrigenGateway):
+# asi el BFF niega lo que llegue directo a la EC2 sin pasar por aqui.
+$envAws = Join-Path $root 'infra\.env.aws'
+$secreto = ((Get-Content $envAws) | Where-Object { $_ -like 'GATEWAY_SECRETO=*' }) -replace '^GATEWAY_SECRETO=', ''
+if (-not $secreto) {
+  $bytes = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+  $secreto = [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+  Add-Content $envAws "GATEWAY_SECRETO=$secreto" -Encoding UTF8
+  Write-Host '   GATEWAY_SECRETO generado en .env.aws (redesplegar apps para que el BFF lo conozca)'
+}
+# Por archivo: PowerShell 5.1 rompe las comillas de un JSON pasado como argumento
+$paramsFile = Join-Path $env:TEMP 'agrotrack-gateway-params.json'
+@{ 'append:header.X-Origen-Gateway' = $secreto } | ConvertTo-Json -Compress | Set-Content $paramsFile -Encoding ASCII
+
+# Integracion HTTP proxy hacia el BFF. Se busca por su URI y no por posicion:
+# gateway-frontend.ps1 agrega otras integraciones a la misma API.
+$intId = (Aws apigatewayv2 get-integrations --api-id $apiId --query "Items[?contains(IntegrationUri, ':8081/')].IntegrationId | [0]" --output text).Trim()
 # {proxy} captura solo lo que va DESPUES de /api/: hay que volver a poner el
 # prefijo, o el BFF recibe /report/kpis, no calza con su matriz y responde 403.
 $uri = "http://${appsIp}:8081/api/{proxy}"
 if (-not $intId -or $intId -eq 'None') {
-  $intId = (Aws apigatewayv2 create-integration --api-id $apiId --integration-type HTTP_PROXY --integration-method ANY --integration-uri $uri --payload-format-version 1.0 --query 'IntegrationId' --output text).Trim()
+  $intId = (Aws apigatewayv2 create-integration --api-id $apiId --integration-type HTTP_PROXY --integration-method ANY --integration-uri $uri --payload-format-version 1.0 --request-parameters "file://$paramsFile" --query 'IntegrationId' --output text).Trim()
   Write-Host "   integracion creada $intId"
 } else {
-  Aws apigatewayv2 update-integration --api-id $apiId --integration-id $intId --integration-uri $uri | Out-Null
-  Write-Host "   integracion actualizada $intId -> $uri"
+  Aws apigatewayv2 update-integration --api-id $apiId --integration-id $intId --integration-uri $uri --request-parameters "file://$paramsFile" | Out-Null
+  Write-Host "   integracion actualizada $intId -> $uri (con cabecera X-Origen-Gateway)"
 }
+Remove-Item $paramsFile -ErrorAction SilentlyContinue
 
 # Authorizer JWT de Azure AD
 $authId = (Aws apigatewayv2 get-authorizers --api-id $apiId --query "Items[?Name=='azure-ad'].AuthorizerId | [0]" --output text).Trim()
@@ -68,14 +84,15 @@ if (-not $authId -or $authId -eq 'None') {
   Write-Host "   authorizer actualizado $authId"
 }
 
-# Ruta ANY /api/{proxy+} protegida
+# Ruta ANY /api/{proxy+} protegida: token valido de Azure Y scope access_as_user.
+# Sin el scope el Gateway responde 403 antes de tocar el BFF.
 $routeId = (Aws apigatewayv2 get-routes --api-id $apiId --query "Items[?RouteKey=='ANY /api/{proxy+}'].RouteId | [0]" --output text).Trim()
 if (-not $routeId -or $routeId -eq 'None') {
-  Aws apigatewayv2 create-route --api-id $apiId --route-key 'ANY /api/{proxy+}' --target "integrations/$intId" --authorization-type JWT --authorizer-id $authId | Out-Null
-  Write-Host '   ruta creada ANY /api/{proxy+} (JWT)'
+  Aws apigatewayv2 create-route --api-id $apiId --route-key 'ANY /api/{proxy+}' --target "integrations/$intId" --authorization-type JWT --authorizer-id $authId --authorization-scopes access_as_user | Out-Null
+  Write-Host '   ruta creada ANY /api/{proxy+} (JWT + scope access_as_user)'
 } else {
-  Aws apigatewayv2 update-route --api-id $apiId --route-id $routeId --target "integrations/$intId" --authorization-type JWT --authorizer-id $authId | Out-Null
-  Write-Host '   ruta actualizada'
+  Aws apigatewayv2 update-route --api-id $apiId --route-id $routeId --target "integrations/$intId" --authorization-type JWT --authorizer-id $authId --authorization-scopes access_as_user | Out-Null
+  Write-Host '   ruta actualizada (JWT + scope access_as_user)'
 }
 
 # Preflight CORS sin authorizer: el navegador manda OPTIONS sin token y la

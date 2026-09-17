@@ -121,7 +121,13 @@ public class SecurityConfig {
 
                         // Lo que no esta en la matriz no pasa, tenga el rol que tenga
                         .anyRequest().denyAll())
+                // 401 y 403 con problem+json y el motivo exacto (vencido, audiencia, rol...)
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(RespuestasSeguridad.noAutenticado(json))
+                        .accessDeniedHandler(RespuestasSeguridad.sinPermiso(json)))
                 .oauth2ResourceServer(oauth -> oauth
+                        .authenticationEntryPoint(RespuestasSeguridad.noAutenticado(json))
+                        .accessDeniedHandler(RespuestasSeguridad.sinPermiso(json))
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(new JwtRolesConverter())))
                 // Despues de la matriz: solo se consulta la cuenta de quien ya tiene el rol.
                 .addFilterAfter(new FiltroCuentaActiva(cuentas, json), AuthorizationFilter.class)

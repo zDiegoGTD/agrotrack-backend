@@ -164,6 +164,7 @@ services:
       KAFKA_ADMIN_URL: http://kafka-admin:8080
       USERS_URL: http://users:8080
       CORS_ORIGENES: ${CORS_ORIGENES}
+      GATEWAY_SECRETO: ${GATEWAY_SECRETO:-}
 
   frontend:
     build: ../../frontend-agrotrack
