@@ -15,6 +15,7 @@ El frontend Angular vive en su propio repositorio: **agrotrack-frontend**.
 | `ms-agrotrack-notify` | Consume RabbitMQ: email, ticket de recepción y guía PDF |
 | `ms-agrotrack-audit` | Consume Kafka: timeline inmutable de eventos |
 | `ms-agrotrack-report` | Consume Kafka: KPIs y tiempo de ciclo |
+| `ms-agrotrack-users` | Cuentas: registro al primer ingreso, aprobación por el admin y ficha del productor |
 | `ms-agrotrack-mq-admin` | Declara la topología de RabbitMQ desde código |
 | `ms-agrotrack-kafka-admin` | Declara los tópicos de Kafka desde código |
 | `infra` | Docker Compose (local y por instancia EC2) y scripts de AWS |
@@ -33,7 +34,7 @@ cd .. && for s in ms-agrotrack-*; do (cd $s && ./mvnw -q -DskipTests package); d
 powershell -File infra/local/smoke.ps1 -KeepRunning
 ```
 
-El smoke test arranca los 8 servicios y recorre el flujo completo del caso.
+El smoke test arranca los 9 servicios y recorre el flujo completo del caso.
 
 ## Documentación
 

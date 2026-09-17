@@ -5,7 +5,7 @@
   Requiere: infra/local/compose.yml levantado (Postgres, Rabbit, Kafka) y los
   jars empaquetados (mvnw -DskipTests package en cada servicio).
 
-  Arranca los 8 servicios con perfil local, emite tokens con mint.mjs y
+  Arranca los 9 servicios con perfil local, emite tokens con mint.mjs y
   recorre el flujo completo del enunciado:
     ADMIN crea producto y bodega -> CLIENTE registra entrega -> OPERADOR recibe,
     clasifica, pasa a despacho y despacha -> se verifica capacidad en catalog,
@@ -23,7 +23,7 @@ $logs = Join-Path $PSScriptRoot 'logs'; New-Item -ItemType Directory -Force $log
 
 # Libera los puertos de los servicios: un java zombi de una corrida anterior
 # haria fallar el arranque con "Port already in use" sin que se note.
-foreach ($puerto in 8081..8088) {
+foreach ($puerto in 8081..8089) {
   Get-NetTCPConnection -LocalPort $puerto -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
     try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction Stop; Write-Host "   liberado :$puerto (pid $($_.OwningProcess))" } catch { }
   }
@@ -39,6 +39,7 @@ $servicios = [ordered]@{
   'ms-agrotrack-notify'      = 8084
   'ms-agrotrack-audit'       = 8086
   'ms-agrotrack-report'      = 8085
+  'ms-agrotrack-users'       = 8089
   'ms-agrotrack-bff'         = 8081
 }
 $procesos = @()
@@ -90,15 +91,39 @@ try {
 
   Paso 'Tokens'
   $mint = Join-Path $PSScriptRoot 'jwt\mint.mjs'
+  # Oids nuevos en cada corrida: operador, productor y auditor nacen PENDIENTE
+  # y la aprobacion se prueba de verdad, no contra datos de la corrida anterior.
+  $corrida = Get-Date -Format 'yyMMddHHmmss'
   $tAdmin = (& node $mint ADMIN admin-smoke).Trim()
-  $tOper  = (& node $mint OPERADOR operador-smoke).Trim()
-  $tCli   = (& node $mint CLIENTE productor-smoke).Trim()
-  $tAud   = (& node $mint AUDITOR auditor-smoke).Trim()
+  $tOper  = (& node $mint OPERADOR "operador-smoke-$corrida").Trim()
+  $tCli   = (& node $mint CLIENTE "productor-smoke-$corrida").Trim()
+  $tAud   = (& node $mint AUDITOR "auditor-smoke-$corrida").Trim()
   Verificar ($tAdmin.Length -gt 100) 'tokens emitidos'
 
-  Paso '/api/me'
+  Paso 'Cuentas: registro al entrar, bloqueo y aprobacion'
+  $yoAdmin = Api GET '/api/me' $tAdmin
+  if ($yoAdmin.estado -ne 'ACTIVO') {
+    # El primer ADMIN que entra queda activo solo. Si la base local ya tenia
+    # otro admin activo (pruebas a mano con el frontend), se aprueba a
+    # admin-smoke directo en la base. Es el unico atajo del smoke.
+    & docker exec at-postgres psql -U agro_users -d agro_users -c "UPDATE usuario SET estado='ACTIVO', aprobado_por='smoke', aprobado_en=now() WHERE azure_oid='admin-smoke'" | Out-Null
+    $yoAdmin = Api GET '/api/me' $tAdmin
+  }
+  Verificar ($yoAdmin.estado -eq 'ACTIVO') 'admin-smoke ACTIVO'
+
+  $nuevos = @()
+  foreach ($t in @($tOper, $tCli, $tAud)) { $nuevos += Api GET '/api/me' $t }
+  Verificar ((@($nuevos | Where-Object estado -eq 'PENDIENTE')).Count -eq 3) 'operador, productor y auditor nacen PENDIENTE'
+
+  try { Api GET '/api/deliveries' $tCli | Out-Null; Falla 'un PENDIENTE pudo listar entregas' }
+  catch { Verificar ($_.Exception.Response.StatusCode.value__ -eq 403) 'PENDIENTE recibe 403 en /api/deliveries' }
+
+  foreach ($n in $nuevos) { Api PUT "/api/users/$($n.usuarioId)/estado" $tAdmin @{ estado = 'ACTIVO' } | Out-Null }
+  # /api/me vuelve a sincronizar y refresca la cache del BFF; sin esto el
+  # productor seguiria recibiendo 403 hasta 60 s.
   $yo = Api GET '/api/me' $tOper
-  Verificar ($yo.roles -contains 'OPERADOR') "me como OPERADOR ($($yo.userId))"
+  foreach ($t in @($tCli, $tAud)) { Api GET '/api/me' $t | Out-Null }
+  Verificar ($yo.estado -eq 'ACTIVO' -and $yo.roles -contains 'OPERADOR') "aprobados por el admin; me como OPERADOR ($($yo.userId))"
 
   Paso 'ADMIN crea producto y bodega'
   $stamp = Get-Date -Format 'HHmmss'
@@ -157,6 +182,7 @@ try {
   Paso 'Matriz de roles del BFF'
   try { Api GET '/api/report/kpis' $tCli; Falla 'CLIENTE vio reportes' } catch { Verificar ($_.Exception.Response.StatusCode.value__ -eq 403) 'CLIENTE 403 en /api/report' }
   try { Api GET '/api/audit/events' $tOper; Falla 'OPERADOR vio auditoria' } catch { Verificar ($_.Exception.Response.StatusCode.value__ -eq 403) 'OPERADOR 403 en /api/audit' }
+  try { Api GET '/api/users' $tOper; Falla 'OPERADOR listo usuarios' } catch { Verificar ($_.Exception.Response.StatusCode.value__ -eq 403) 'OPERADOR 403 en /api/users' }
   $topo = Api GET '/api/mq/topology' $tAdmin
   Verificar ($topo.totalEnDlq -eq 0) "RabbitMQ sin mensajes en DLQ ($($topo.flujos.Count) flujos)"
   $topics = @(Api GET '/api/kafka/topics' $tAdmin)

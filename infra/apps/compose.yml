@@ -134,6 +134,20 @@ services:
       SPRING_DATASOURCE_USERNAME: agro_report
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_REPORT_PASSWORD}
 
+  # Cuentas y aprobacion (docs/planes/2026-09-08-administracion-usuarios-design.md)
+  users:
+    <<: *svc
+    build: ../../ms-agrotrack-users
+    container_name: at-users
+    ports: ["8089:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      <<: *svc-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/agro_users
+      SPRING_DATASOURCE_USERNAME: agro_users
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_USERS_PASSWORD}
+
   # ---- entrada ----
   bff:
     <<: *svc
@@ -148,6 +162,7 @@ services:
       AUDIT_URL: http://audit:8080
       MQ_ADMIN_URL: http://mq-admin:8080
       KAFKA_ADMIN_URL: http://kafka-admin:8080
+      USERS_URL: http://users:8080
       CORS_ORIGENES: ${CORS_ORIGENES}
 
   frontend:

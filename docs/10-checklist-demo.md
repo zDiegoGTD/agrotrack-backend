@@ -108,6 +108,19 @@ antes daba 401, ahora responde 200.
 Un momento que luce: entra como **Auditor** y pide reportería a mano →
 `403 Forbidden` en `problem+json`. Eso es el indicador del 40% en vivo.
 
+**La aprobación de cuentas** (segunda capa, además del rol):
+
+1. Entra primero con tu cuenta de administrador: al ser el primer admin queda
+   **activa sola** (`aprobado_por = sistema`).
+2. Entra con **Productor Demo** en otra ventana de incógnito: cae en
+   **"Tu cuenta espera aprobación"** aunque su token trae `CLIENTE`.
+   En Network, cualquier `/api/**` le da `403` con `codigo: CUENTA_PENDIENTE`.
+3. Como admin, en **Usuarios** aparece pendiente: **Aprobar**.
+4. El productor pulsa **Volver a comprobar** y entra.
+
+Lo que conviene decir: *el rol lo pone Azure; si la cuenta puede usar el
+sistema lo decide AgroTrack*.
+
 ## 7 · Backend y frontend desplegados, activos e integrados
 
 **En AWS**, EC2 → las 3 instancias, con sus tipos y la IP elástica.

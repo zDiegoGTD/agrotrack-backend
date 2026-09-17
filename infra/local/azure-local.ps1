@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Arranca los 8 servicios en el PC validando tokens REALES de Azure AD
+  Arranca los 9 servicios en el PC validando tokens REALES de Azure AD
   (en vez de la clave de desarrollo) y prepara el frontend en modo MSAL.
   Sirve para probar la identidad completa antes de desplegar en AWS.
 
@@ -20,7 +20,7 @@ $logs = Join-Path $PSScriptRoot 'logs'; New-Item -ItemType Directory -Force $log
 
 # Libera los puertos de los servicios: un java zombi de una corrida anterior
 # haria fallar el arranque con "Port already in use" sin que se note.
-foreach ($puerto in 8081..8088) {
+foreach ($puerto in 8081..8089) {
   Get-NetTCPConnection -LocalPort $puerto -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
     try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction Stop; Write-Host "   liberado :$puerto (pid $($_.OwningProcess))" } catch { }
   }
@@ -41,7 +41,8 @@ $servicios = [ordered]@{
   'ms-agrotrack-mq-admin' = 8087; 'ms-agrotrack-kafka-admin' = 8088
   'ms-agrotrack-catalog' = 8083;  'ms-agrotrack-deliveries' = 8082
   'ms-agrotrack-notify' = 8084;   'ms-agrotrack-audit' = 8086
-  'ms-agrotrack-report' = 8085;   'ms-agrotrack-bff' = 8081
+  'ms-agrotrack-report' = 8085;   'ms-agrotrack-users' = 8089
+  'ms-agrotrack-bff' = 8081
 }
 Write-Host "Issuer   : $issuer"
 Write-Host "Audiences: api://$ClientId, $ClientId`n"

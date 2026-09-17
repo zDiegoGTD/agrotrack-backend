@@ -108,3 +108,18 @@ tests que toquen SQL específico de Oracle (secuencias, `MERGE`, tipos de
 fecha) van a mentir. Cuando Docker esté instalado, los tests de repositorio
 pasan a **Testcontainers** contra la imagen real de Oracle; H2 se queda sólo
 para los tests que no tocan la base.
+
+---
+
+## D8 — Autorización en dos capas: rol del token y cuenta aprobada
+
+**Decidido:** el rol sigue viniendo del claim `roles` de Azure AD (lo exige la
+pauta: *"leer roles y scopes desde los claims del token"*). Encima, el BFF
+exige que la cuenta esté `ACTIVA` en `ms-agrotrack-users`.
+
+**Por qué:** sin la segunda capa, dar de alta o quitar el acceso a alguien
+obliga a entrar al portal de Azure. Con ella, el administrador lo hace desde
+la web y un despedido deja de entrar aunque su cuenta de Microsoft siga viva.
+
+**Coste:** una llamada a `users` por usuario por minuto (caché de 60 s en el
+BFF). Si `users` cae, el BFF responde 503: ante la duda no se deja pasar.

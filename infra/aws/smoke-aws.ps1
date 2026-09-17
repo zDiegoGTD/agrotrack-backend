@@ -81,6 +81,10 @@ try { Invoke-WebRequest "$Gateway/api/me" -UseBasicParsing -TimeoutSec 20 | Out-
 catch { Verificar ($_.Exception.Response.StatusCode.value__ -eq 401) 'sin token -> 401 (lo rechaza el Gateway, no llega al BFF)' }
 
 $yo = Api GET '/api/me'
+if ($yo.estado -ne 'ACTIVO') {
+  Falla "tu cuenta esta $($yo.estado) en AgroTrack: apruebala en /usuarios con un admin activo"
+  exit 1
+}
 Verificar ($yo.roles.Count -gt 0) "/api/me -> $($yo.nombre), roles $($yo.roles -join '+')"
 
 if ($roles -notcontains 'ADMIN' -or $roles -notcontains 'OPERADOR' -or $roles -notcontains 'CLIENTE') {

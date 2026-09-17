@@ -171,6 +171,36 @@ servir el panel con un `SELECT` trivial.
 
 ---
 
+## Esquema `agro_users` — propiedad de `ms-agrotrack-users`
+
+Quién puede usar AgroTrack. **Los roles no viven aquí**: siguen saliendo del
+claim `roles` del token de Azure AD. Esta base decide solo si la cuenta está
+aprobada. Detalle en `docs/planes/2026-09-08-administracion-usuarios-design.md`.
+
+### `USUARIO`
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `ID` | `BIGINT` | PK, `seq_usuario` |
+| `AZURE_OID` | `VARCHAR(50)` | único: el claim `oid` |
+| `EMAIL`, `NOMBRE` | `VARCHAR(200)` | del token, se refrescan en cada ingreso |
+| `ESTADO` | `VARCHAR(20)` | `PENDIENTE` · `ACTIVO` · `RECHAZADO` · `INACTIVO` (CHECK) |
+| `ROL_ULTIMO_TOKEN` | `VARCHAR(20)` | informativo, nunca autoriza |
+| `MOTIVO` | `VARCHAR(500)` | por qué se rechazó o desactivó |
+| `PRIMER_INGRESO`, `ULTIMO_INGRESO` | `TIMESTAMPTZ` | |
+| `APROBADO_POR`, `APROBADO_EN` | `VARCHAR(50)`, `TIMESTAMPTZ` | `oid` del admin, o `sistema` para el primer admin |
+| `VERSION` | `BIGINT` | bloqueo optimista |
+
+### `PERFIL_PRODUCTOR`
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `USUARIO_ID` | `BIGINT` | PK y FK a `USUARIO` |
+| `RUT` | `VARCHAR(15)` | único, `12345678-9` |
+| `RAZON_SOCIAL` | `VARCHAR(200)` | |
+| `TELEFONO`, `DIRECCION` | `VARCHAR(30)`, `VARCHAR(300)` | |
+| `BODEGA_HABITUAL_ID` | `BIGINT` | sin FK: la bodega vive en `agro_catalog` |
+
 ## Cómo se crean las tablas
 
 **No con `ddl-auto=update`.** Está bien para el primer día y es un desastre
