@@ -1,6 +1,5 @@
 # AgroTrack — Plan de implementación
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Plataforma completa de acopio y despacho agrícola según `Caso 1 - AgroTrack.docx`: 6 microservicios de dominio + 2 administradores de topología + BFF + frontend Angular, corriendo en local con Docker y desplegables en AWS.
 

@@ -1,6 +1,5 @@
 # Administración de usuarios — plan de implementación
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Que todo usuario quede registrado en PostgreSQL al entrar por primera vez y que el administrador lo apruebe, rechace, desactive o reactive desde la web; el BFF bloquea a quien no esté `ACTIVO`.
 
@@ -8,7 +7,7 @@
 
 **Tech Stack:** Java 21, Spring Boot 3.5.16, Spring Security 6 resource server, Spring Data JPA, Flyway, PostgreSQL 16, Testcontainers · Angular 22 (signals, standalone), Vitest · Docker Compose, AWS API Gateway.
 
-**Spec:** `docs/superpowers/specs/2026-09-08-administracion-usuarios-design.md`
+**Spec:** `docs/planes/2026-09-08-administracion-usuarios-design.md`
 
 ## Global Constraints
 
@@ -24,7 +23,6 @@
 - Errores RFC 7807 (`application/problem+json`) con propiedad `codigo` cuando hay un código de negocio.
 - Spring Boot **3.5.16**, no 4. Nombres de tablas y columnas en minúscula sin comillas (como el resto).
 - Código y comentarios en español, sin tildes en identificadores; misma densidad de comentarios que `ms-agrotrack-catalog`.
-- Commits terminan con `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
 - Backend en el repo `AgroTrack` (agrotrack-backend); frontend en `AgroTrack/frontend-agrotrack` (repo aparte, se commitea ahí).
 
 ## Cómo correr las cosas (Windows, Git Bash)
@@ -481,9 +479,7 @@ Expected: 4 tests PASS.
 ```bash
 cd /c/Users/deint/Desktop/AgroTrack
 git add ms-agrotrack-users infra/local/init-postgres/02-users.sql
-git commit -m "feat(users): esqueleto del servicio y esquema agro_users
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(users): esqueleto del servicio y esquema agro_users"
 ```
 
 ---
@@ -716,9 +712,7 @@ Expected: PASS (18 casos).
 
 ```bash
 git add ms-agrotrack-users/src
-git commit -m "feat(users): maquina de estados de la cuenta y regla del primer admin
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(users): maquina de estados de la cuenta y regla del primer admin"
 ```
 
 ---
@@ -1224,9 +1218,7 @@ Expected: 5 tests PASS. Si `primerAdminConcurrente` falla con duplicado en `uk_u
 
 ```bash
 git add ms-agrotrack-users/src
-git commit -m "feat(users): registro en el primer ingreso, idempotente y con primer admin unico
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(users): registro en el primer ingreso, idempotente y con primer admin unico"
 ```
 
 ---
@@ -1456,9 +1448,7 @@ Expected: PASS (Schema 4, Máquina 18, Sincronizar 5, Administración 9).
 
 ```bash
 git add ms-agrotrack-users/src
-git commit -m "feat(users): aprobar, rechazar, desactivar y ficha del productor
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(users): aprobar, rechazar, desactivar y ficha del productor"
 ```
 
 ---
@@ -1867,9 +1857,7 @@ Expected: `target/ms-agrotrack-users-0.0.1-SNAPSHOT.jar`.
 
 ```bash
 git add ms-agrotrack-users/src
-git commit -m "feat(users): endpoints de administracion con errores problem+json
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(users): endpoints de administracion con errores problem+json"
 ```
 
 ---
@@ -2186,9 +2174,7 @@ Expected: 5 tests PASS.
 
 ```bash
 git add ms-agrotrack-bff/src
-git commit -m "feat(bff): cliente de users con cache de estado de 60 s
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(bff): cliente de users con cache de estado de 60 s"
 ```
 
 ---
@@ -2640,9 +2626,7 @@ Expected: PASS (`BffSeguridadTest` completo, `BffCuentaTest` 13, `EstadoCuentasT
 ```bash
 ./mvnw -q -DskipTests package
 cd .. && git add ms-agrotrack-bff/src
-git commit -m "feat(bff): /api/me registra al usuario y solo las cuentas activas pasan
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(bff): /api/me registra al usuario y solo las cuentas activas pasan"
 ```
 
 ---
@@ -2662,7 +2646,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - [ ] **Step 1: `infra/apps/compose.yml`** — nuevo servicio tras `report`, y `USERS_URL` en el BFF:
 
 ```yaml
-  # Cuentas y aprobacion (docs/superpowers/specs/2026-09-08-administracion-usuarios-design.md)
+  # Cuentas y aprobacion (docs/planes/2026-09-08-administracion-usuarios-design.md)
   users:
     <<: *svc
     build: ../../ms-agrotrack-users
@@ -2793,7 +2777,7 @@ y "El smoke test arranca los 8 servicios" → "los 9 servicios".
 
 Quién puede usar AgroTrack. **Los roles no viven aquí**: siguen saliendo del
 claim `roles` del token de Azure AD. Esta base decide solo si la cuenta está
-aprobada. Detalle en `docs/superpowers/specs/2026-09-08-administracion-usuarios-design.md`.
+aprobada. Detalle en `docs/planes/2026-09-08-administracion-usuarios-design.md`.
 
 ### `USUARIO`
 
@@ -2859,9 +2843,7 @@ sistema lo decide AgroTrack*.
 ```bash
 cd /c/Users/deint/Desktop/AgroTrack
 git add infra/apps/compose.yml infra/.env.aws.example infra/aws/crear.ps1 infra/local/smoke.ps1 infra/local/azure-local.ps1 infra/aws/smoke-aws.ps1 README.md docs/00-decisiones.md docs/06-modelo-de-datos.md docs/10-checklist-demo.md
-git commit -m "feat(infra): users en compose y smoke que prueba bloqueo y aprobacion
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(infra): users en compose y smoke que prueba bloqueo y aprobacion"
 ```
 
 ---
@@ -3162,9 +3144,7 @@ Expected: PASS (los specs existentes + 5 de `CuentaService` + 5 de `estadoGuard`
 
 ```bash
 git add src/app/core
-git commit -m "feat(cuenta): estado de la cuenta desde /api/me y estadoGuard
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(cuenta): estado de la cuenta desde /api/me y estadoGuard"
 ```
 
 ---
@@ -3412,9 +3392,7 @@ Expected: tests PASS (4 nuevos de `Pendiente`); build sin errores.
 
 ```bash
 git add src/app
-git commit -m "feat(cuenta): pantalla de cuenta pendiente y guarda en el shell
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(cuenta): pantalla de cuenta pendiente y guarda en el shell"
 ```
 
 ---
@@ -3857,9 +3835,7 @@ Expected: PASS (4 nuevos de `Usuarios`); build sin errores.
 
 ```bash
 git add src/app
-git commit -m "feat(usuarios): pantalla de administracion de cuentas y fichas
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(usuarios): pantalla de administracion de cuentas y fichas"
 ```
 
 ---
@@ -4044,9 +4020,7 @@ node infra/local/jwt/mint.mjs CLIENTE productor-manual
 
 ```bash
 git add src/app
-git commit -m "feat(usuarios): ficha propia del productor
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "feat(usuarios): ficha propia del productor"
 ```
 
 ---
