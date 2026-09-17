@@ -58,7 +58,7 @@ foreach ($s in $servicios.GetEnumerator()) {
 # Frontend en modo MSAL apuntando a este tenant
 $envFile = Join-Path $root 'frontend-agrotrack\src\environments\environment.azure.ts'
 @"
-// Generado por infra/local/azure-local.ps1 — login real de Azure contra el backend local.
+// Generado por infra/local/azure-local.ps1 - login real de Azure contra el backend local.
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:8081',
@@ -72,7 +72,10 @@ export const environment = {
     },
   },
 };
-"@ | Set-Content -Path $envFile -Encoding UTF8
+"@ | ForEach-Object {
+  # UTF-8 sin BOM: Set-Content -Encoding UTF8 de PowerShell 5.1 agrega BOM
+  [IO.File]::WriteAllText($envFile, $_, (New-Object Text.UTF8Encoding $false))
+}
 
 Write-Host "`nServicios arrancando (60-90 s). Frontend con Azure:"
 Write-Host "  cd $root\frontend-agrotrack"
