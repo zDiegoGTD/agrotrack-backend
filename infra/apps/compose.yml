@@ -170,7 +170,8 @@ services:
     build: ../../frontend-agrotrack
     container_name: at-frontend
     restart: unless-stopped
-    ports: ["80:80"]
+    # nginx sin root escucha en 8080 dentro del contenedor
+    ports: ["80:8080"]
 
 volumes:
   notify-salida:
