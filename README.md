@@ -1,5 +1,7 @@
 # AgroTrack — backend
 
+[![Seguridad](https://sonarcloud.io/api/project_badges/measure?project=zDiegoGTD_agrotrack-backend&metric=security_rating)](https://sonarcloud.io/summary/overall?id=zDiegoGTD_agrotrack-backend) [![Confiabilidad](https://sonarcloud.io/api/project_badges/measure?project=zDiegoGTD_agrotrack-backend&metric=reliability_rating)](https://sonarcloud.io/summary/overall?id=zDiegoGTD_agrotrack-backend) [![Mantenibilidad](https://sonarcloud.io/api/project_badges/measure?project=zDiegoGTD_agrotrack-backend&metric=sqale_rating)](https://sonarcloud.io/summary/overall?id=zDiegoGTD_agrotrack-backend)
+
 Plataforma de acopio y despacho de producción agrícola. Caso semestral de
 **Desarrollo Cloud Native I (DSY1107)**.
 
@@ -13,11 +15,11 @@ El frontend Angular vive en su propio repositorio:
 | `ms-agrotrack-bff` | BFF detrás del API Gateway. Valida el JWT de Azure AD y autoriza por rol |
 | `ms-agrotrack-deliveries` | Entregas y máquina de estados. Publica hechos en Kafka y comandos en RabbitMQ |
 | `ms-agrotrack-catalog` | Productos, bodegas y capacidad |
-| `ms-agrotrack-notify` | Consume RabbitMQ: email, ticket de recepción y guía PDF |
+| `ms-agrotrack-notify` | Consume RabbitMQ con ACK manual: email, ticket de recepción y guía PDF; lo que falla va a la DLQ |
 | `ms-agrotrack-audit` | Consume Kafka: timeline inmutable de eventos |
 | `ms-agrotrack-report` | Consume Kafka: KPIs y tiempo de ciclo |
 | `ms-agrotrack-users` | Cuentas: registro al primer ingreso, aprobación por el admin y ficha del productor |
-| `ms-agrotrack-mq-admin` | Declara la topología de RabbitMQ desde código |
+| `ms-agrotrack-mq-admin` | Declara la topología de RabbitMQ desde código y expone una API REST para crear y eliminar colas, exchanges y bindings |
 | `ms-agrotrack-kafka-admin` | Declara los tópicos de Kafka desde código |
 | `infra` | Docker Compose (local y por instancia EC2) y scripts de AWS |
 | `docs` | Decisiones de arquitectura, contratos y guías |
@@ -44,21 +46,31 @@ por qué. Después:
 
 - [`docs/01-maquina-de-estados.md`](docs/01-maquina-de-estados.md) — el corazón del caso
 - [`docs/02-contrato-de-eventos.md`](docs/02-contrato-de-eventos.md) — Kafka lleva hechos, RabbitMQ comandos
+- [`docs/03-topologia-mensajeria.md`](docs/03-topologia-mensajeria.md) — colas, DLQ, API de administración y confirmación de mensajes
 - [`docs/07-azure-app-registration.md`](docs/07-azure-app-registration.md) — identidad
 - [`docs/08-aws-academy.md`](docs/08-aws-academy.md) — despliegue
-- [`docs/09-pauta-ep1.md`](docs/09-pauta-ep1.md) — qué pide la pauta y dónde se cumple
+- [`docs/09-pauta-ep1.md`](docs/09-pauta-ep1.md) — pauta EP1 (identidad, API Manager) y dónde se cumple
+- [`docs/11-pauta-ep3-ep4.md`](docs/11-pauta-ep3-ep4.md) — **pauta EP3 y EP4 (RabbitMQ) y dónde se cumple cada indicador**
 - [`docs/10-checklist-demo.md`](docs/10-checklist-demo.md) — guion de la demostración
 
 ## Seguridad en una línea por capa
 
 | Capa | Qué valida |
 |---|---|
-| Azure AD | Solo usuarios del tenant con un rol asignado pueden iniciar sesión |
+| Azure AD | Dos apps: **AgroTrack Web** inicia sesión y **AgroTrack API** define roles y scope. Solo usuarios con un rol asignado pueden entrar |
 | API Gateway | Firma, emisor, audiencia, vigencia y scope `access_as_user`; agrega la cabecera que identifica al Gateway |
 | BFF | Solo acepta tráfico del Gateway; vuelve a validar el token; matriz de roles; cuenta aprobada en `ms-agrotrack-users`; límite de peticiones |
 | Cada microservicio | Valida el token otra vez y el rol en cada endpoint |
 
-Para demostrarlo en vivo contra AWS: `infra/aws/probar-jwt.ps1`.
+Para demostrarlo en vivo contra AWS: `infra/aws/probar-jwt.ps1`. La API de administración de RabbitMQ: `infra/aws/probar-mq-admin.ps1`.
+
+## Calidad
+
+Cada push a `main` compila los 9 servicios y los analiza en
+[SonarQube Cloud](https://sonarcloud.io/summary/overall?id=zDiegoGTD_agrotrack-backend)
+(`.github/workflows/sonarqube.yml`). Los tests corren en local con
+`./mvnw test` en cada servicio; los de integración usan RabbitMQ, Kafka y
+PostgreSQL reales con Testcontainers.
 
 ## Tecnologías
 
