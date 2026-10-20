@@ -2,3 +2,5 @@
 local/logs/
 .env.aws
 .aws-hosts.json
+# Clave privada de desarrollo: cada PC la genera con local/jwt/generar-claves.mjs
+local/jwt/local-private.pem

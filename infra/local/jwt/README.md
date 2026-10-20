@@ -4,9 +4,16 @@
 aceptan los servicios corriendo en tu PC con `spring.profiles.active=local`.
 En AWS los tokens los firma Azure AD y estas claves no participan.
 
-Se versionan las dos (privada incluida) para que cualquier clon del repo
-pueda emitir tokens sin pasos extra. Si alguna vez se filtran, no protegen
-nada: no hay ningun entorno real que las acepte.
+**La clave privada no se versiona** (`local-private.pem` esta en `infra/.gitignore`).
+Solo la publica va al repo, copiada en cada servicio. En un clon nuevo, una vez:
+
+```bash
+node generar-claves.mjs           # crea el par y copia la publica a los servicios
+```
+
+y recompila los servicios. `node generar-claves.mjs --rotar` reemplaza el par
+actual (asi se roto el 2026-10-19, cuando la privada dejo de versionarse: la que
+quedo en el historial de git ya no es aceptada por ningun servicio).
 
 ```bash
 node mint.mjs OPERADOR              # token de jefe de acopio (8 h)
@@ -15,5 +22,4 @@ node mint.mjs ADMIN,AUDITOR         # varios roles
 ```
 
 La clave publica esta copiada en `src/main/resources/jwt/local-public.pem`
-de cada servicio. Si regeneras el par (`generar-claves.mjs`, borrando antes
-los .pem), hay que volver a copiarla a todos.
+de cada servicio; `generar-claves.mjs` la copia sola al generar o rotar el par.

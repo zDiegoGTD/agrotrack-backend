@@ -8,11 +8,16 @@
 // Claims que los servicios leen: roles (autorizacion), oid (identidad del
 // productor), name (para mostrar), aud/iss (validacion).
 import { createSign, randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const aqui = dirname(fileURLToPath(import.meta.url));
+// La clave privada no se versiona: cada PC genera la suya una vez.
+if (!existsSync(join(aqui, "local-private.pem"))) {
+  console.error("Falta local-private.pem. Ejecuta primero:  node generar-claves.mjs  y recompila los servicios.");
+  process.exit(1);
+}
 const privateKey = readFileSync(join(aqui, "local-private.pem"), "utf8");
 
 const roles = (process.argv[2] ?? "OPERADOR").split(",").map((r) => r.trim().toUpperCase());
