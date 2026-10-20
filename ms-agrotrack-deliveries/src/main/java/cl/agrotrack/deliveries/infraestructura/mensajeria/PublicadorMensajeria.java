@@ -40,27 +40,25 @@ public class PublicadorMensajeria implements PublicadorEventos {
 
     private static final Logger log = LoggerFactory.getLogger(PublicadorMensajeria.class);
 
-    /** Efecto asincrono -> routing key del comando (binding direct de mq-admin). */
-    static final Map<Efecto, String> COMANDOS = Map.of(
-            Efecto.NOTIFICAR_PRODUCTOR, "email.send",
-            Efecto.EMITIR_TICKET_BODEGA, "receipt.ticket",
-            Efecto.GENERAR_GUIA_DESPACHO, "voucher.gen");
-
     private final KafkaTemplate<String, String> kafka;
     private final RabbitTemplate rabbit;
     private final ObjectMapper json;
     private final Envelopes envelopes;
     private final String topicoEventos;
     private final String exchangeComandos;
+    /** Efecto asincrono -> routing key del comando; viene de agrotrack.rabbit.comandos. */
+    private final Map<Efecto, String> comandos;
 
     public PublicadorMensajeria(KafkaTemplate<String, String> kafka, RabbitTemplate rabbit, ObjectMapper json,
-                                Envelopes envelopes, String topicoEventos, String exchangeComandos) {
+                                Envelopes envelopes, String topicoEventos, String exchangeComandos,
+                                Map<Efecto, String> comandos) {
         this.kafka = kafka;
         this.rabbit = rabbit;
         this.json = json;
         this.envelopes = envelopes;
         this.topicoEventos = topicoEventos;
         this.exchangeComandos = exchangeComandos;
+        this.comandos = Map.copyOf(comandos);
     }
 
     @Override
@@ -77,9 +75,9 @@ public class PublicadorMensajeria implements PublicadorEventos {
         Envelope hecho = envelopes.crear(tipoDeHecho(e.getEstado()), e.getCodigo(), actor, datos, traceId);
 
         List<Envelope> comandos = efectos.stream()
-                .filter(COMANDOS::containsKey)
+                .filter(this.comandos::containsKey)
                 .sorted() // orden estable: el mismo input produce los mismos mensajes
-                .map(ef -> envelopes.crear(COMANDOS.get(ef), e.getCodigo(), actor, datosDeComando(ef, datos), traceId))
+                .map(ef -> envelopes.crear(this.comandos.get(ef), e.getCodigo(), actor, datosDeComando(ef, datos), traceId))
                 .toList();
 
         despuesDelCommit(() -> {

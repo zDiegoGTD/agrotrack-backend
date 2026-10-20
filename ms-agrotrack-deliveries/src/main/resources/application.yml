@@ -32,6 +32,12 @@ agrotrack:
     topico-eventos: deliveries.events
   rabbit:
     exchange-comandos: cmd.direct
+    # Efecto asincrono del dominio -> routing key de su comando.
+    # Cada una calza con un binding direct que declara ms-agrotrack-mq-admin.
+    comandos:
+      NOTIFICAR_PRODUCTOR: email.send
+      EMITIR_TICKET_BODEGA: receipt.ticket
+      GENERAR_GUIA_DESPACHO: voucher.gen
 
 server:
   port: ${SERVER_PORT:8082}

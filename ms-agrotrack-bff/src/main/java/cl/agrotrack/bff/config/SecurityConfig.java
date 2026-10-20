@@ -111,6 +111,8 @@ public class SecurityConfig {
 
                         // Estado de la mensajeria: paneles de administracion
                         .requestMatchers(HttpMethod.GET, "/api/mq/**", "/api/kafka/**").hasAnyRole("ADMIN", "OPERADOR")
+                        // Crear o borrar colas, exchanges y bindings cambia por donde viajan los mensajes: solo admin
+                        .requestMatchers("/api/mq/**").hasRole("ADMIN")
 
                         // Usuarios: la ficha propia la edita el productor; administrar es del admin.
                         // POST /api/users/sincronizar no figura: lo llama el BFF desde /api/me.

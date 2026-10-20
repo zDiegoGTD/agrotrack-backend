@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -17,6 +18,7 @@ import java.time.Clock;
  * para desarrollar sin brokers).
  */
 @Configuration
+@EnableConfigurationProperties(PropiedadesRabbit.class)
 public class MensajeriaConfig {
 
     @Bean
@@ -31,7 +33,8 @@ public class MensajeriaConfig {
                                            ObjectMapper json,
                                            Envelopes envelopes,
                                            @Value("${agrotrack.kafka.topico-eventos}") String topico,
-                                           @Value("${agrotrack.rabbit.exchange-comandos}") String exchange) {
-        return new PublicadorMensajeria(kafka, rabbit, json, envelopes, topico, exchange);
+                                           PropiedadesRabbit rabbitProps) {
+        return new PublicadorMensajeria(kafka, rabbit, json, envelopes, topico,
+                rabbitProps.exchangeComandos(), rabbitProps.comandos());
     }
 }

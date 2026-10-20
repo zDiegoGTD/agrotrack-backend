@@ -65,6 +65,8 @@ class ComandosListenerIT {
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry r) {
         r.add("agrotrack.notify.salida-dir", () -> salida.toString());
+        // Esperas cortas entre reintentos para que el test no tarde segundos.
+        r.add("agrotrack.notify.reintentos.esperas", () -> "200ms,200ms");
     }
 
     @TestConfiguration

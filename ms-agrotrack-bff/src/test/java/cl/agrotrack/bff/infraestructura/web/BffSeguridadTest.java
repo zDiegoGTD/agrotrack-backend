@@ -26,6 +26,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -95,6 +96,25 @@ class BffSeguridadTest {
         mvc.perform(post("/api/catalog/bodegas/3/capacidad/reservar").with(con("OPERADOR"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cantidad\":1,\"entregaCodigo\":\"x\"}"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Administrar RabbitMQ: OPERADOR solo mira la topologia; crear y borrar colas es de ADMIN")
+    void administracionRabbit() throws Exception {
+        mvc.perform(get("/api/mq/topology").with(con("OPERADOR"))).andExpect(status().isOk());
+        mvc.perform(post("/api/mq/queues").with(con("OPERADOR"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"q.x\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/mq/queues/q.x").with(con("OPERADOR")))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/mq/queues").with(con("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"q.x\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(delete("/api/mq/queues/q.x").with(con("ADMIN")))
+                .andExpect(status().isOk());
+        verify(reenviador).reenviar(org.mockito.ArgumentMatchers.eq(HttpMethod.POST), any(), any(), any());
+        verify(reenviador).reenviar(org.mockito.ArgumentMatchers.eq(HttpMethod.DELETE), any(), any(), any());
     }
 
     @Test

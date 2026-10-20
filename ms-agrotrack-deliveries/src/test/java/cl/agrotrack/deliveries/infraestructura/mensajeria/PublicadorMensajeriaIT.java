@@ -95,7 +95,10 @@ class PublicadorMensajeriaIT {
         json = new ObjectMapper().findAndRegisterModules().registerModule(new JavaTimeModule())
                 .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         publicador = new PublicadorMensajeria(kafka, rabbit, json,
-                new Envelopes(Clock.fixed(AHORA, ZoneOffset.UTC)), "deliveries.events", "cmd.direct");
+                new Envelopes(Clock.fixed(AHORA, ZoneOffset.UTC)), "deliveries.events", "cmd.direct",
+                java.util.Map.of(cl.agrotrack.deliveries.dominio.Efecto.NOTIFICAR_PRODUCTOR, "email.send",
+                        cl.agrotrack.deliveries.dominio.Efecto.EMITIR_TICKET_BODEGA, "receipt.ticket",
+                        cl.agrotrack.deliveries.dominio.Efecto.GENERAR_GUIA_DESPACHO, "voucher.gen"));
     }
 
     @AfterAll

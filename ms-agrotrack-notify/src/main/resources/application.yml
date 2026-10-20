@@ -10,9 +10,8 @@ spring:
     password: ${RABBITMQ_PASSWORD:CambiaEsto123}
     listener:
       simple:
-        # ACK si el listener termina, NACK sin requeue si lanza (RabbitConfig).
-        # Reintentos: 3 con backoff 1s/4s/16s; despues, DLQ.
-        acknowledge-mode: auto
+        # ACK explicito: cada consumidor confirma o rechaza en ProcesadorComandos.
+        acknowledge-mode: manual
         default-requeue-rejected: false
         prefetch: 10
   mail:
@@ -26,7 +25,18 @@ spring:
       mail.smtp.starttls.enable: true
 
 agrotrack:
+  # Nombres de las colas que consume notify. La topologia la declara mq-admin;
+  # aqui solo se nombra lo que se escucha, en un unico lugar.
+  rabbit:
+    colas:
+      email: q.cmd.email
+      receipt: q.cmd.receipt
+      voucher: q.cmd.voucher
   notify:
+    # Fallo transitorio: espera antes de cada reintento. 2 esperas = 3 intentos;
+    # agotados, NACK sin requeue y el mensaje va a la DLQ.
+    reintentos:
+      esperas: 1s, 4s
     remitente: ${NOTIFY_REMITENTE:no-reply@agrotrack.local}
     # Los productores se identifican por el oid de Azure; el correo real
     # vendria de un directorio. Mientras no exista, se deriva asi:

@@ -62,5 +62,75 @@ Dos razones concretas:
 2. La pauta va a pedir demostrar la topología. Un archivo en git es evidencia;
    un screenshot de la UI no.
 
-**Pendiente de confirmar el martes:** si la pauta define estos servicios de
-otra forma, esta interpretación se descarta sin costo — todavía no hay código.
+La pauta del EP3 confirmó y amplió esta interpretación: el administrador de
+RabbitMQ, además de declarar la topología del sistema, **expone una API REST
+para crear y eliminar colas, exchanges y bindings**.
+
+## API de administración de RabbitMQ (`ms-agrotrack-mq-admin`)
+
+Toda la lógica vive en `RabbitAdminService`; los controladores solo traducen
+HTTP y no conocen `AmqpAdmin`. Crear y borrar es solo para **ADMIN** (en el
+BFF y en el propio servicio); `OPERADOR` puede consultar la topología.
+
+| Método | Ruta | Qué hace | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/mq/topology` | Topología del sistema con mensajes y consumidores por cola; `totalEnDlq` > 0 es alarma | 200 |
+| `POST` | `/api/mq/queues` | Crea una cola; por defecto durable y **con su DLQ** (`<cola>.dlq` enrutada por `cmd.dead.dlx`) | 201 + `Location` |
+| `GET` | `/api/mq/queues/{nombre}` | Estado de una cola | 200 |
+| `DELETE` | `/api/mq/queues/{nombre}` | Elimina una cola | 204 |
+| `DELETE` | `/api/mq/queues/{nombre}/mensajes` | Purga (vacía sin borrar), p. ej. una DLQ ya reprocesada | 204 |
+| `POST` | `/api/mq/exchanges` | Crea un exchange `DIRECT`, `TOPIC` o `FANOUT` | 201 |
+| `DELETE` | `/api/mq/exchanges/{nombre}` | Elimina un exchange | 204 |
+| `POST` | `/api/mq/bindings` | Une cola y exchange con una routing key (admite `*` y `#`) | 201 |
+| `DELETE` | `/api/mq/bindings` | Deshace la unión (mismo cuerpo que el POST) | 204 |
+| `GET` | `/api/mq/protegidos` | Recursos del sistema que la API no deja tocar | 200 |
+
+**Validación de entrada** (DTOs con Bean Validation): nombres obligatorios, de
+hasta 200 caracteres, solo letras, números, `.`, `-` y `_`, y sin el prefijo
+`amq.` reservado por RabbitMQ; el tipo de exchange debe ser uno de los tres
+admitidos. Un dato inválido responde **400** con `codigo: DATOS_INVALIDOS` y
+el motivo de cada campo, sin llegar al broker.
+
+**Errores con código** (problem+json):
+
+| Situación | HTTP | `codigo` |
+|---|---|---|
+| Tocar una cola, DLQ o exchange de la topología del sistema | 403 | `RECURSO_DEL_SISTEMA` |
+| Borrar o unir algo que no existe | 404 | `NO_EXISTE` |
+| Redeclarar con otros atributos (`PRECONDITION_FAILED`) | 409 | `CONFLICTO_CON_EXISTENTE` |
+| Otro rechazo del broker | 502 | `BROKER_RECHAZO` |
+
+Las colas y exchanges del sistema están protegidos porque borrarlos en caliente
+haría que los comandos de notify se perdieran sin aviso; esa topología solo
+cambia en `TopologiaRabbit`, versionada en git.
+
+## Confirmación de mensajes en los consumidores (`ms-agrotrack-notify`)
+
+`acknowledge-mode: manual`: cada mensaje se confirma o rechaza explícitamente
+en `ProcesadorComandos`, compartido por los tres consumidores, uno por dominio
+funcional: `EmailListener` (notificaciones), `TicketListener` (recepción en
+bodega) y `VoucherListener` (despacho).
+
+| Situación | Decisión | Resultado |
+|---|---|---|
+| Se ejecutó bien | `basicAck` | sale de la cola |
+| `eventId` ya procesado (reentrega) | `basicAck` | sale sin repetir el efecto |
+| Mensaje inválido: JSON roto, sin `eventId`, `type` o `subject` | `basicNack(requeue=false)` inmediato | **DLQ** sin reintentar |
+| Fallo transitorio (SMTP caído, disco lleno) | reintento tras 1 s y 4 s | sigue en proceso |
+| Reintentos agotados (3 intentos) | `basicNack(requeue=false)` | **DLQ**, con log `[dlq]` y métrica `agrotrack.notify.dlq.total` |
+| El servicio se apaga a mitad de una espera | `basicNack(requeue=true)` | vuelve a la cola para otra instancia |
+
+Nunca se rechaza con `requeue=true` ante un error del mensaje: volvería al
+frente de la cola y la bloquearía en un bucle infinito. Los reintentos son
+acotados y ocurren en el consumidor.
+
+## Nombres centralizados
+
+Ningún nombre de cola, exchange o routing key está escrito en las clases de
+negocio:
+
+| Servicio | Dónde |
+|---|---|
+| mq-admin | `TopologiaRabbit`, clase `@Configuration` única con exchanges, colas, DLQ y bindings |
+| deliveries | `application.yml` → `agrotrack.rabbit.exchange-comandos` y `agrotrack.rabbit.comandos` (efecto → routing key) |
+| notify | `application.yml` → `agrotrack.rabbit.colas` (`@RabbitListener(queues = "${...}")`) y `agrotrack.notify.reintentos` |
