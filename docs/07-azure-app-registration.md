@@ -1,8 +1,35 @@
-# Azure AD (Entra ID): App Registration "AgroTrack"
+# Azure AD (Entra ID): dos App Registrations, "AgroTrack API" y "AgroTrack Web"
 
 Lo que pide la sección 4 del enunciado: `clientId`, `redirectUri`,
 `authority = https://login.microsoftonline.com/<TENANT_ID>/`, MSAL en Angular,
 JWT Authorizer en API Gateway y validación en Spring Security.
+
+## Dos aplicaciones: quién es quién
+
+El frontend y el backend son aplicaciones distintas para Azure, como recomienda
+Microsoft: una **inicia sesión** y la otra **es el recurso protegido**.
+
+| | **AgroTrack API** (backend) | **AgroTrack Web** (frontend, SPA) |
+|---|---|---|
+| Client ID | `44f417b1-ff99-4463-974a-56bb29cb66dd` | `3406ecc1-064d-4ef5-ac27-ad91afa6f00c` |
+| Qué define | *Expose an API*: `api://44f417b1-…/access_as_user`; los 4 **App Roles**; *Assignment required* y la asignación de usuarios | Plataforma **SPA** con los redirect URI (Gateway y `http://localhost:4200`); *Allow public client flows* para los scripts de prueba |
+| Permisos | — | Delegado `access_as_user` sobre AgroTrack API |
+| Confianza | *Authorized client applications*: AgroTrack Web preautorizada para `access_as_user` (sin pantalla de consentimiento) | — |
+| Quién usa su ID | Audiencia del JWT Authorizer del Gateway y `AZURE_API_CLIENT_ID` de los servicios | `clientId` de MSAL en `environment.prod.ts`; `-SpaClientId` en `probar-jwt.ps1` y `smoke-aws.ps1` |
+
+Cómo viajan los roles: el usuario inicia sesión en **AgroTrack Web**, pero MSAL
+pide un token **para AgroTrack API** (scope `access_as_user`). Ese token tiene
+`aud` = la API y trae en `roles` lo que el usuario tiene asignado *en la API*.
+Por eso los roles y la asignación viven en la API, y por eso el backend y el
+Gateway no cambiaron al separar las apps: siguen validando la misma audiencia.
+
+> Las secciones 1 a 6 describen cómo se armó la app original, que hoy es
+> **AgroTrack API**. Para crear **AgroTrack Web**: *New registration* → nombre
+> `AgroTrack Web`, single tenant, redirect URI tipo *SPA* con la URL del Gateway;
+> luego *Authentication* (agregar `http://localhost:4200` y activar *Allow public
+> client flows*), *API permissions* → *APIs my organization uses* → AgroTrack API
+> → `access_as_user`; y en la API, *Expose an API* → *Add a client application*
+> con el client ID de la web.
 
 ## 0. ¿Puedo crear apps en este tenant?
 
@@ -121,7 +148,8 @@ acepta como audience tanto `api://<CLIENT_ID>` (v1) como `<CLIENT_ID>` (v2).
 | Variable | Dónde va |
 |---|---|
 | `TENANT_ID` | `.env.aws` (`AZURE_TENANT_ID`), `environment.prod.ts`, JWT Authorizer |
-| `CLIENT_ID` | `.env.aws` (`AZURE_API_CLIENT_ID`), `environment.prod.ts` (`clientId` y `apiScope`), JWT Authorizer (audience) |
+| `CLIENT_ID` de **AgroTrack API** | `.env.aws` (`AZURE_API_CLIENT_ID`), `environment.prod.ts` (`apiScope`), JWT Authorizer (audience) |
+| `CLIENT_ID` de **AgroTrack Web** | `environment.prod.ts` (`clientId`), `-SpaClientId` de los scripts |
 | Issuer | `https://login.microsoftonline.com/<TENANT_ID>/v2.0` |
 | JWKS | `https://login.microsoftonline.com/<TENANT_ID>/discovery/v2.0/keys` |
 
@@ -131,7 +159,7 @@ Sin tocar código, con la infraestructura local levantada:
 
 ```powershell
 cd C:\Users\deint\Desktop\AgroTrack\infra\local
-powershell -File .\azure-local.ps1 -TenantId <TENANT_ID> -ClientId <CLIENT_ID>
+powershell -File .\azure-local.ps1 -TenantId <TENANT_ID> -ClientId <CLIENT_ID_API> -SpaClientId <CLIENT_ID_WEB>
 ```
 
 El script arranca los 8 servicios validando tokens **de Azure** (en vez de la

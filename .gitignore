@@ -26,3 +26,6 @@ infra/local/logs/
 .classpath
 .project
 .settings/
+
+# Grafo de conocimiento local (graphify), no es parte del proyecto
+graphify-out/

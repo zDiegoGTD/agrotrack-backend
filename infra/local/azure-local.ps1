@@ -11,7 +11,9 @@
 #>
 param(
   [Parameter(Mandatory)] [string]$TenantId,
-  [Parameter(Mandatory)] [string]$ClientId
+  [Parameter(Mandatory)] [string]$ClientId,
+  # App del frontend (SPA) que inicia sesion. Si se omite, la misma de la API.
+  [string]$SpaClientId = $ClientId
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -65,7 +67,7 @@ export const environment = {
   auth: {
     mode: 'msal' as 'dev' | 'msal',
     msal: {
-      clientId: '$ClientId',
+      clientId: '$SpaClientId',
       tenantId: '$TenantId',
       redirectUri: 'http://localhost:4200',
       apiScope: 'api://$ClientId/access_as_user',

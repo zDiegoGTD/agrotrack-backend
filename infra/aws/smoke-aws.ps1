@@ -16,7 +16,9 @@
 param(
   [string]$Token,
   [string]$TenantId = '74c11418-e5f3-4253-9755-b665d755321c',
+  # App de la API (scope y audiencia) y app del frontend (SPA) que inicia sesion
   [string]$ClientId = '44f417b1-ff99-4463-974a-56bb29cb66dd',
+  [string]$SpaClientId = '3406ecc1-064d-4ef5-ac27-ad91afa6f00c',
   [string]$Gateway
 )
 $ErrorActionPreference = 'Continue'
@@ -39,7 +41,7 @@ if (-not $Token) {
   Paso 'Autenticacion con Azure AD (codigo de dispositivo)'
   $scope = "api://$ClientId/access_as_user"
   $dc = Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/devicecode" `
-    -Body @{ client_id = $ClientId; scope = "$scope offline_access" }
+    -Body @{ client_id = $SpaClientId; scope = "$scope offline_access" }
 
   Write-Host "`n   $($dc.message)`n" -ForegroundColor Yellow
   Start-Process 'https://microsoft.com/devicelogin'
@@ -51,7 +53,7 @@ if (-not $Token) {
     Start-Sleep -Seconds ([int]$dc.interval)
     try {
       $r = Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token" `
-        -Body @{ grant_type = 'urn:ietf:params:oauth:grant-type:device_code'; client_id = $ClientId; device_code = $dc.device_code }
+        -Body @{ grant_type = 'urn:ietf:params:oauth:grant-type:device_code'; client_id = $SpaClientId; device_code = $dc.device_code }
       $Token = $r.access_token
     } catch {
       $e = ($_.ErrorDetails.Message | ConvertFrom-Json -ErrorAction SilentlyContinue)

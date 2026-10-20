@@ -26,7 +26,10 @@ param(
   [string]$Token,
   [string]$TokenVencido,
   [string]$TenantId = '74c11418-e5f3-4253-9755-b665d755321c',
-  [string]$ClientId = '44f417b1-ff99-4463-974a-56bb29cb66dd'
+  # App de la API: su scope y su audiencia son los que valida el Gateway
+  [string]$ClientId = '44f417b1-ff99-4463-974a-56bb29cb66dd',
+  # App del frontend (SPA) que inicia sesion con el codigo de dispositivo
+  [string]$SpaClientId = '3406ecc1-064d-4ef5-ac27-ad91afa6f00c'
 )
 $ErrorActionPreference = 'Continue'
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -74,7 +77,7 @@ function Caso($n, $descripcion, $esperado, $r) {
 if (-not $Token) {
   Write-Host "`n== Token real de Azure AD (codigo de dispositivo)" -ForegroundColor Cyan
   $dc = Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/devicecode" `
-    -Body @{ client_id = $ClientId; scope = "api://$ClientId/access_as_user" }
+    -Body @{ client_id = $SpaClientId; scope = "api://$ClientId/access_as_user" }
   Write-Host "`n   $($dc.message)`n" -ForegroundColor Yellow
   Start-Process 'https://microsoft.com/devicelogin'
   Set-Clipboard -Value $dc.user_code -ErrorAction SilentlyContinue
@@ -83,7 +86,7 @@ if (-not $Token) {
     Start-Sleep -Seconds ([int]$dc.interval)
     try {
       $Token = (Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token" `
-          -Body @{ grant_type = 'urn:ietf:params:oauth:grant-type:device_code'; client_id = $ClientId; device_code = $dc.device_code }).access_token
+          -Body @{ grant_type = 'urn:ietf:params:oauth:grant-type:device_code'; client_id = $SpaClientId; device_code = $dc.device_code }).access_token
     } catch {
       $e = ($_.ErrorDetails.Message | ConvertFrom-Json -ErrorAction SilentlyContinue)
       if ($e.error -notin 'authorization_pending', 'slow_down') { Write-Host "Azure: $($e.error)" -ForegroundColor Red; exit 1 }

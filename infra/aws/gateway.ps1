@@ -12,6 +12,8 @@
 param(
   [Parameter(Mandatory)] [string]$TenantId,
   [Parameter(Mandatory)] [string]$ClientId,
+  # App del frontend (SPA). Si se omite, se usa la misma de la API (configuracion antigua de una sola app).
+  [string]$SpaClientId = $ClientId,
   [string]$Region = 'us-east-1',
   [string]$Nombre = 'agrotrack-api'
 )
@@ -136,7 +138,7 @@ export const environment = {
   auth: {
     mode: 'msal' as 'dev' | 'msal',
     msal: {
-      clientId: '$ClientId',
+      clientId: '$SpaClientId',
       tenantId: '$TenantId',
       redirectUri: '$origen',
       apiScope: 'api://$ClientId/access_as_user',

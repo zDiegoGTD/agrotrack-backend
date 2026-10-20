@@ -103,6 +103,8 @@ if (Test-Path $envAws) {
 $envProd = Join-Path $root 'frontend-agrotrack\src\environments\environment.prod.ts'
 $clientId = (Select-String -Path $envProd -Pattern "clientId: '([^']+)'").Matches[0].Groups[1].Value
 $tenantId = (Select-String -Path $envProd -Pattern "tenantId: '([^']+)'").Matches[0].Groups[1].Value
+# Son dos apps: clientId es la SPA (login) y apiScope apunta a la API. Se conservan ambos.
+$apiScope = (Select-String -Path $envProd -Pattern "apiScope: '([^']+)'").Matches[0].Groups[1].Value
 @"
 /**
  * Produccion / AWS. Generado por infra/aws/gateway-frontend.ps1.
@@ -120,7 +122,7 @@ export const environment = {
       clientId: '$clientId',
       tenantId: '$tenantId',
       redirectUri: '$invoke',
-      apiScope: 'api://$clientId/access_as_user',
+      apiScope: '$apiScope',
     },
   },
 };
