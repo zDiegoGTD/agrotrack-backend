@@ -110,7 +110,9 @@ public class PublicadorMensajeria implements PublicadorEventos {
                     .setHeader("traceId", env.traceId())
                     .setDeliveryMode(org.springframework.amqp.core.MessageDeliveryMode.PERSISTENT)
                     .build();
-            rabbit.send(exchangeComandos, env.type(), msg);
+            // La correlacion lleva el eventId y el cuerpo: si el broker no lo enruta o lo
+            // rechaza, RegistroNoEntregados lo deja en el log para reinyectarlo.
+            rabbit.send(exchangeComandos, env.type(), msg, new RegistroNoEntregados.ComandoPublicado(env.eventId(), cuerpo));
             log.info("[rabbit] {} {} eventId={}", env.type(), env.subject(), env.eventId());
         } catch (Exception ex) {
             log.error("[rabbit] NO PUBLICADO {} {} -> reinyectar: {}", env.type(), env.subject(), cuerpo, ex);

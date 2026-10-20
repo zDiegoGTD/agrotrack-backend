@@ -2,6 +2,7 @@ package cl.agrotrack.deliveries.infraestructura.mensajeria;
 
 import cl.agrotrack.deliveries.aplicacion.PublicadorEventos;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,6 +25,14 @@ public class MensajeriaConfig {
     @Bean
     Envelopes envelopes(Clock clock) {
         return new Envelopes(clock);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "agrotrack.mensajeria.enabled", havingValue = "true", matchIfMissing = true)
+    RegistroNoEntregados registroNoEntregados(MeterRegistry registry, RabbitTemplate rabbit) {
+        RegistroNoEntregados registro = new RegistroNoEntregados(registry);
+        registro.registrarEn(rabbit);
+        return registro;
     }
 
     @Bean

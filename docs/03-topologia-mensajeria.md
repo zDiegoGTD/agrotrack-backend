@@ -124,6 +124,20 @@ Nunca se rechaza con `requeue=true` ante un error del mensaje: volvería al
 frente de la cola y la bloquearía en un bucle infinito. Los reintentos son
 acotados y ocurren en el consumidor.
 
+## Mensajes no entregados en el productor (`ms-agrotrack-deliveries`)
+
+La DLQ cubre lo que llegó a una cola y falló al procesarse. Lo que **nunca llega a
+una cola** se registra en el productor, en `RegistroNoEntregados`:
+
+| Situación | Aviso de RabbitMQ | Qué queda |
+|---|---|---|
+| El exchange existe pero ninguna cola tiene binding para esa routing key | *return* (se publica con `mandatory=true`; sin eso el broker lo descartaría en silencio) | log `[rabbit] NO ENRUTADO` con eventId, exchange, routing key y el cuerpo completo |
+| El broker no puede hacerse cargo (exchange inexistente, error interno) | *publisher confirm* con NACK | log `[rabbit] RECHAZADO POR EL BROKER` con eventId, causa y cuerpo |
+| El broker no responde | excepción al publicar | log `[rabbit] NO PUBLICADO` con el cuerpo |
+
+Los dos primeros se cuentan en la métrica `agrotrack.deliveries.comandos.no_entregados`.
+En los tres casos el cuerpo queda en el log para reinyectarlo.
+
 ## Nombres centralizados
 
 Ningún nombre de cola, exchange o routing key está escrito en las clases de
