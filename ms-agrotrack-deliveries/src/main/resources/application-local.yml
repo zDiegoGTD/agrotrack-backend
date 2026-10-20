@@ -2,7 +2,8 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/agro_deliveries
     username: agro_deliveries
-    password: agro_deliveries
+    # Solo para la base del compose local; se reemplaza con SPRING_DATASOURCE_PASSWORD
+    password: ${SPRING_DATASOURCE_PASSWORD:agro_deliveries}
   security:
     oauth2:
       resourceserver:

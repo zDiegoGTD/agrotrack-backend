@@ -103,15 +103,28 @@ public class KpiService {
 
     // ---- helpers SQL ----
 
-    /** UPSERT del contador de la hora/bodega. La columna viene de una lista cerrada, no del mensaje. */
+    /** UPSERT del contador de la hora/bodega. Cada columna tiene su sentencia fija: nada del mensaje entra al SQL. */
     private void sumar(Instant hora, Long bodegaId, String columna) {
-        if (!columna.matches("registradas|recibidas|despachadas|rechazadas")) {
-            throw new IllegalArgumentException(columna);
-        }
-        jdbc.update("""
-                INSERT INTO kpi_entregas_hora (hora, bodega_id, %1$s) VALUES (?, ?, 1)
-                ON CONFLICT (hora, bodega_id) DO UPDATE SET %1$s = kpi_entregas_hora.%1$s + 1
-                """.formatted(columna), Timestamp.from(hora), bodegaId == null ? 0L : bodegaId);
+        String sql = switch (columna) {
+            case "registradas" -> """
+                    INSERT INTO kpi_entregas_hora (hora, bodega_id, registradas) VALUES (?, ?, 1)
+                    ON CONFLICT (hora, bodega_id) DO UPDATE SET registradas = kpi_entregas_hora.registradas + 1
+                    """;
+            case "recibidas" -> """
+                    INSERT INTO kpi_entregas_hora (hora, bodega_id, recibidas) VALUES (?, ?, 1)
+                    ON CONFLICT (hora, bodega_id) DO UPDATE SET recibidas = kpi_entregas_hora.recibidas + 1
+                    """;
+            case "despachadas" -> """
+                    INSERT INTO kpi_entregas_hora (hora, bodega_id, despachadas) VALUES (?, ?, 1)
+                    ON CONFLICT (hora, bodega_id) DO UPDATE SET despachadas = kpi_entregas_hora.despachadas + 1
+                    """;
+            case "rechazadas" -> """
+                    INSERT INTO kpi_entregas_hora (hora, bodega_id, rechazadas) VALUES (?, ?, 1)
+                    ON CONFLICT (hora, bodega_id) DO UPDATE SET rechazadas = kpi_entregas_hora.rechazadas + 1
+                    """;
+            default -> throw new IllegalArgumentException(columna);
+        };
+        jdbc.update(sql, Timestamp.from(hora), bodegaId == null ? 0L : bodegaId);
     }
 
     /** Si el evento de registro se perdio (o llego despues), la fila igual tiene que existir. */

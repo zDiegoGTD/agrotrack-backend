@@ -93,6 +93,10 @@ public class PublicadorMensajeria implements PublicadorEventos {
         try {
             kafka.send(topicoEventos, env.subject(), cuerpo).get();
             log.info("[kafka] {} {} eventId={}", env.type(), env.subject(), env.eventId());
+        } catch (InterruptedException ex) {
+            // Se apaga el servicio mientras espera a Kafka: se deja constancia y se respeta la interrupcion.
+            Thread.currentThread().interrupt();
+            log.error("[kafka] NO PUBLICADO (interrumpido) {} {} -> reinyectar: {}", env.type(), env.subject(), cuerpo, ex);
         } catch (Exception ex) {
             log.error("[kafka] NO PUBLICADO {} {} -> reinyectar: {}", env.type(), env.subject(), cuerpo, ex);
         }

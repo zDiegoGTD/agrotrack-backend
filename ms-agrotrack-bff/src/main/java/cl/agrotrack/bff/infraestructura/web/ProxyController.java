@@ -12,8 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -56,12 +58,13 @@ public class ProxyController {
         this(servicios, reenviador, new ObjectMapper());
     }
 
-    @RequestMapping("/api/{servicio}/**")
+    @RequestMapping(value = "/api/{servicio}/**",
+            method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     public ResponseEntity<byte[]> proxy(HttpServletRequest request,
+                                        @PathVariable("servicio") String servicio,  // deliveries
                                         @RequestBody(required = false) byte[] cuerpo,
                                         Authentication auth) throws IOException {
         String path = request.getRequestURI();               // /api/deliveries/12/status
-        String servicio = path.split("/")[2];                 // deliveries
         String base = servicios.urlDe(servicio);
         if (base == null) {
             return problema(HttpStatus.NOT_FOUND, "No existe el servicio '" + servicio + "'");

@@ -11,8 +11,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Filtro de logging seguro para el BFF.
@@ -27,8 +25,6 @@ public class LoggingFilter extends OncePerRequestFilter {
     private static final Set<String> PARAMETROS_SENSIBLES = Set.of(
             "password", "pass", "pwd", "token", "access_token", "refresh_token",
             "secret", "secretkey", "api_key", "apikey", "authorization", "auth");
-
-    private static final Pattern QUERY_PARAM_PATTERN = Pattern.compile("([^&=?]+)=([^&]*)");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -62,21 +58,23 @@ public class LoggingFilter extends OncePerRequestFilter {
             return queryString;
         }
 
-        Matcher matcher = QUERY_PARAM_PATTERN.matcher(queryString);
+        // Recorrido lineal por "&" y el primer "=": sin expresiones regulares, una
+        // query maliciosa no puede provocar tiempos de proceso desmedidos.
         StringBuilder sb = new StringBuilder();
-        while (matcher.find()) {
-            String key = matcher.group(1);
-            String val = matcher.group(2);
-
-            String reemplazo;
-            if (PARAMETROS_SENSIBLES.contains(key.toLowerCase())) {
-                reemplazo = key + "=***";
-            } else {
-                reemplazo = key + "=" + val;
+        String[] partes = queryString.split("&", -1);
+        for (int i = 0; i < partes.length; i++) {
+            if (i > 0) {
+                sb.append('&');
             }
-            matcher.appendReplacement(sb, Matcher.quoteReplacement(reemplazo));
+            String parte = partes[i];
+            int igual = parte.indexOf('=');
+            String clave = igual < 0 ? parte : parte.substring(0, igual);
+            if (igual >= 0 && PARAMETROS_SENSIBLES.contains(clave.toLowerCase())) {
+                sb.append(clave).append("=***");
+            } else {
+                sb.append(parte);
+            }
         }
-        matcher.appendTail(sb);
         return sb.toString();
     }
 

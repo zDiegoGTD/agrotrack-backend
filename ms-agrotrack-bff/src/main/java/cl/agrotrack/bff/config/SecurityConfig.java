@@ -5,7 +5,7 @@ import cl.agrotrack.bff.cuenta.FiltroCuentaActiva;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,12 +43,6 @@ public class SecurityConfig {
     private final List<String> origenesCors;
     private final boolean esProduccion;
 
-    @Autowired(required = false)
-    private RateLimiterFilter rateLimiterFilter;
-
-    @Autowired(required = false)
-    private LoggingFilter loggingFilter;
-
     public SecurityConfig(
             @Value("${agrotrack.cors.origenes}") String origenes,
             @Value("${spring.profiles.active:local}") String activeProfile) {
@@ -77,15 +71,16 @@ public class SecurityConfig {
      * ademas que la cuenta este ACTIVA en ms-agrotrack-users.
      */
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, EstadoCuentas cuentas, ObjectMapper json) throws Exception {
-        if (loggingFilter != null) {
-            http.addFilterBefore(loggingFilter, HeaderWriterFilter.class);
-        }
-        if (rateLimiterFilter != null) {
-            http.addFilterBefore(rateLimiterFilter, UsernamePasswordAuthenticationFilter.class);
-        }
+    SecurityFilterChain filterChain(HttpSecurity http, EstadoCuentas cuentas, ObjectMapper json,
+                                    ObjectProvider<LoggingFilter> loggingFilter,
+                                    ObjectProvider<RateLimiterFilter> rateLimiterFilter) throws Exception {
+        loggingFilter.ifAvailable(f -> http.addFilterBefore(f, HeaderWriterFilter.class));
+        rateLimiterFilter.ifAvailable(f -> http.addFilterBefore(f, UsernamePasswordAuthenticationFilter.class));
 
         return http
+                // CSRF desactivado a proposito: API sin estado (STATELESS) que se autentica solo con
+                // el Bearer de la cabecera Authorization, nunca con cookies. CSRF abusa de cookies que el
+                // navegador envia solo; aqui no hay ninguna que robar.
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

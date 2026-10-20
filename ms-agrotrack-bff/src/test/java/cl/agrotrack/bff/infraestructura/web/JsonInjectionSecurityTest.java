@@ -75,8 +75,9 @@ class JsonInjectionSecurityTest {
         // Simulamos petición a servicio no mapeado con caracteres de inyección JSON: comillas, llaves y saltos de línea
         String payloadMalicioso = "malicioso\",\"injected\":true,\"hack\":\"yes\n\r\t";
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/" + payloadMalicioso + "/test");
+        String servicio = payloadMalicioso;
 
-        ResponseEntity<byte[]> response = controller.proxy(request, null, null);
+        ResponseEntity<byte[]> response = controller.proxy(request, servicio, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getHeaders().getContentType().toString()).contains("application/problem+json");
@@ -121,7 +122,7 @@ class JsonInjectionSecurityTest {
         ProxyController controller = new ProxyController(servicios, reenviador, objectMapper);
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/servicio_desconocido/test");
-        ResponseEntity<byte[]> response = controller.proxy(request, null, null);
+        ResponseEntity<byte[]> response = controller.proxy(request, "servicio_desconocido", null, null);
 
         JsonNode node = objectMapper.readTree(response.getBody());
         assertThat(node.has("type")).isTrue();

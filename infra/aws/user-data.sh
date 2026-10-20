@@ -9,7 +9,7 @@ dnf install -y docker git
 
 # Docker Compose v2 como plugin
 mkdir -p /usr/local/lib/docker/cli-plugins
-curl -fsSL "https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64" \
+curl -fsSL --proto '=https' --tlsv1.2 "https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64" \
   -o /usr/local/lib/docker/cli-plugins/docker-compose
 chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
