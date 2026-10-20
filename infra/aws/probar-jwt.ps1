@@ -54,8 +54,9 @@ function Llamar([string]$url, [string]$tok) {
   } catch {
     $resp = $_.Exception.Response
     if (-not $resp) { return @{ status = 0; codigo = $_.Exception.Message } }
-    $cuerpo = ''
-    try { $cuerpo = (New-Object IO.StreamReader($resp.GetResponseStream())).ReadToEnd() } catch { }
+    # En Windows PowerShell 5.1 el cuerpo del error llega en ErrorDetails; el stream ya viene consumido.
+    $cuerpo = "$($_.ErrorDetails.Message)"
+    if (-not $cuerpo) { try { $cuerpo = (New-Object IO.StreamReader($resp.GetResponseStream())).ReadToEnd() } catch { } }
     $codigo = ''
     try { $codigo = ($cuerpo | ConvertFrom-Json).codigo } catch { }
     if (-not $codigo -and $cuerpo) { $codigo = $cuerpo.Substring(0, [Math]::Min(60, $cuerpo.Length)) }
