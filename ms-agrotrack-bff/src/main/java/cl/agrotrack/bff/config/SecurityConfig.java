@@ -108,6 +108,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/mq/**", "/api/kafka/**").hasAnyRole("ADMIN", "OPERADOR")
                         // Crear o borrar colas, exchanges y bindings cambia por donde viajan los mensajes: solo admin
                         .requestMatchers("/api/mq/**").hasRole("ADMIN")
+                        // Topicos, su configuracion y offsets de los grupos: lo mismo, solo admin
+                        .requestMatchers("/api/kafka/**").hasRole("ADMIN")
 
                         // Usuarios: la ficha propia la edita el productor; administrar es del admin.
                         // POST /api/users/sincronizar no figura: lo llama el BFF desde /api/me.
@@ -136,7 +138,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsSource() {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowedOrigins(origenesCors);
-        c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         c.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "traceparent"));
         c.setExposedHeaders(List.of("Location", "Content-Type"));
         c.setMaxAge(3600L);

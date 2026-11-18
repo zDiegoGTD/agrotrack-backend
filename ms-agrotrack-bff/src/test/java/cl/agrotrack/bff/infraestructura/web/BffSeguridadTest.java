@@ -29,6 +29,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -115,6 +116,30 @@ class BffSeguridadTest {
                 .andExpect(status().isOk());
         verify(reenviador).reenviar(org.mockito.ArgumentMatchers.eq(HttpMethod.POST), any(), any(), any());
         verify(reenviador).reenviar(org.mockito.ArgumentMatchers.eq(HttpMethod.DELETE), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Administrar Kafka: OPERADOR mira topicos y grupos; crear, cambiar y borrar es de ADMIN")
+    void administracionKafka() throws Exception {
+        mvc.perform(get("/api/kafka/consumer-groups").with(con("OPERADOR"))).andExpect(status().isOk());
+        mvc.perform(post("/api/kafka/topics").with(con("OPERADOR"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"demo\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(patch("/api/kafka/topics/demo/config").with(con("OPERADOR"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/kafka/topics/demo").with(con("OPERADOR")))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/kafka/topics").with(con("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"demo\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(patch("/api/kafka/topics/demo/config").with(con("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk());
+        mvc.perform(delete("/api/kafka/topics/demo").with(con("ADMIN")))
+                .andExpect(status().isOk());
+        verify(reenviador).reenviar(org.mockito.ArgumentMatchers.eq(HttpMethod.PATCH), any(), any(), any());
     }
 
     @Test
