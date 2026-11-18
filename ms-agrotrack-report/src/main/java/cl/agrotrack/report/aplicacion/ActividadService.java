@@ -16,6 +16,10 @@ import java.util.List;
  * Aplica los resumenes de {@code audit.timeline}: cuenta eventos por rol y
  * hora, y guarda el ultimo estado de cada entrega segun auditoria.
  * Idempotente: una reentrega del mismo resumen no suma dos veces.
+ *
+ * <p>audit.timeline es compactado (queda el ultimo resumen por entrega): las
+ * cuentas son "desde que report-timeline empezo a leer". Releer el topico
+ * desde el inicio no reconstruye la historia completa; para eso esta audit.
  */
 @Service
 public class ActividadService {

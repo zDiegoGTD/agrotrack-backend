@@ -45,14 +45,23 @@ public class TimelineListener {
         ResumenTimeline resumen = new ResumenTimeline(
                 e.getEntregaCodigo(), e.getTipo(), estado == null ? null : estado.toString(),
                 e.getActorId(), e.getActorRol(), e.getOcurridoEn(), e.getEventId());
-        kafka.send(topicoTimeline, e.getEntregaCodigo(), resumen)
-                // El timeline en base ya quedo escrito; el resumen es derivado y
-                // se puede regenerar. No se tumba el consumo por esto.
-                .whenComplete((ok, ex) -> {
-                    if (ex != null) {
-                        log.warn("No se pudo republicar el resumen de {} en {}: {}",
-                                e.getEntregaCodigo(), topicoTimeline, ex.getMessage());
-                    }
-                });
+        // El timeline en base ya quedo escrito; el resumen es derivado y se
+        // puede regenerar. No se tumba el consumo por esto: si se relanzara, el
+        // reintento veria el evento como duplicado y el resumen se perderia igual.
+        try {
+            kafka.send(topicoTimeline, e.getEntregaCodigo(), resumen)
+                    .whenComplete((ok, ex) -> {
+                        if (ex != null) {
+                            avisarNoPublicado(e, ex);
+                        }
+                    });
+        } catch (RuntimeException ex) {
+            avisarNoPublicado(e, ex);
+        }
+    }
+
+    private void avisarNoPublicado(EventoTimeline e, Throwable ex) {
+        log.warn("No se pudo republicar el resumen de {} ({}) en {}: {}",
+                e.getEntregaCodigo(), e.getEventId(), topicoTimeline, ex.getMessage());
     }
 }

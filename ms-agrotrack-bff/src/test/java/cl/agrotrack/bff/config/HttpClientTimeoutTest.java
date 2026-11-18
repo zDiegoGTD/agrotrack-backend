@@ -107,4 +107,25 @@ class HttpClientTimeoutTest {
         assertThat(response.getBody()).isEqualTo("{\"status\":\"UP\"}");
         assertThat(duracion).isLessThan(3000);
     }
+
+    @Test
+    @DisplayName("PATCH llega al servicio (cambiar la configuracion de un topico pasa por el BFF)")
+    void patchLlegaAlServicio() {
+        server.createContext("/api/kafka/topics/demo/config", exchange -> {
+            byte[] response = ("{\"metodo\":\"" + exchange.getRequestMethod() + "\"}").getBytes();
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response);
+            }
+        });
+        RestClient client = RestClient.builder().requestFactory(new HttpClientConfig(1000, 1000).clientHttpRequestFactory()).build();
+
+        String cuerpo = client.patch()
+                .uri("http://localhost:" + port + "/api/kafka/topics/demo/config")
+                .body("{}")
+                .retrieve()
+                .body(String.class);
+
+        org.assertj.core.api.Assertions.assertThat(cuerpo).contains("PATCH");
+    }
 }

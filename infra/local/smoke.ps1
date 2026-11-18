@@ -186,7 +186,7 @@ try {
   $topo = Api GET '/api/mq/topology' $tAdmin
   Verificar ($topo.totalEnDlq -eq 0) "RabbitMQ sin mensajes en DLQ ($($topo.flujos.Count) flujos)"
   $topics = @(Api GET '/api/kafka/topics' $tAdmin)
-  Verificar (($topics | Where-Object existe).Count -eq 3) 'los 3 topicos de Kafka existen'
+  Verificar ((@($topics | Where-Object delSistema)).Count -eq 4) 'los 4 topicos del sistema de Kafka existen'
 }
 catch {
   Falla "excepcion: $($_.Exception.Message)"

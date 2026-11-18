@@ -139,7 +139,8 @@ if ($roles -contains 'ADMIN') {
   $topo = Api GET '/api/mq/topology'
   Verificar ($topo.flujos.Count -eq 3 -and $topo.totalEnDlq -eq 0) "RabbitMQ: 3 flujos, $($topo.totalEnDlq) en DLQ"
   $topics = @(Api GET '/api/kafka/topics')
-  Verificar ((@($topics | Where-Object existe)).Count -eq 3) "Kafka: $((@($topics | Where-Object { $_.existe })).Count)/3 topicos, replicas $($topics[0].replicas)"
+  $sistema = @($topics | Where-Object delSistema)
+  Verificar ($sistema.Count -eq 4) "Kafka: $($sistema.Count)/4 topicos del sistema, replicas $($sistema[0].replicas)"
 }
 
 Write-Host ''

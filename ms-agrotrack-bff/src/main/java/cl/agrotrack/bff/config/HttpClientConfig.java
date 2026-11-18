@@ -5,8 +5,9 @@ import org.springframework.boot.web.client.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 
+import java.net.http.HttpClient;
 import java.time.Duration;
 
 /**
@@ -29,8 +30,12 @@ public class HttpClientConfig {
 
     @Bean
     public ClientHttpRequestFactory clientHttpRequestFactory() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
+        // java.net.http y no HttpURLConnection: este ultimo rechaza PATCH, que usa
+        // kafka-admin para cambiar la configuracion de un topico.
+        HttpClient cliente = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(cliente);
         factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
         return factory;
     }

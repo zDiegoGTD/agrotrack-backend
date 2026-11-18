@@ -51,7 +51,9 @@ releer todo), y `delete` con 30 días evita que crezca sin límite.
 lee `deliveries.events` completo y a su propio ritmo. Si reportería se cae,
 auditoría no se entera — que es exactamente el punto de usar Kafka aquí.
 `report-timeline` lee `audit.timeline` en un grupo aparte, para que su avance
-no dependa del de `report-consumer`.
+no dependa del de `report-consumer`. Como `audit.timeline` es compactado, la
+actividad por rol cuenta lo leído desde que el grupo empezó; releer desde el
+inicio solo trae el último resumen por entrega (la historia completa está en audit).
 
 Dentro de un grupo, cada listener corre **3 hilos** (`concurrency`, uno por
 partición). Con una sola instancia, cada hilo toma una partición; si se
