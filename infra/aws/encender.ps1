@@ -120,6 +120,11 @@ $formato = "docker ps --format '{{.Names}}: {{.Status}}' | sort"
 $estado = & ssh @ssh "ec2-user@$($hosts.apps.publica)" $formato 2>&1
 Write-Host "`n   Contenedores en apps:"; $estado | ForEach-Object { Write-Host "     $_" }
 
+Paso 'Management UI desde esta red'
+# Si cambiaste de red desde crear.ps1, la UI de RabbitMQ no cargaria sin esto
+try { & (Join-Path $PSScriptRoot 'abrir-mi-ip.ps1') | Out-Null; Ok 'tu IP actual puede abrir RabbitMQ y Kafka UI' }
+catch { Write-Host "   no se pudo abrir tu IP: $_  -> corre .\abrir-mi-ip.ps1" -ForegroundColor Yellow }
+
 Write-Host "`nAplicacion: $gw" -ForegroundColor Green
 Write-Host "RabbitMQ  : http://$($hosts.mq.publica):15672   Kafka UI: http://$($hosts.kafka.publica):8080"
 Write-Host "`nAl terminar de trabajar:  .\apagar.ps1" -ForegroundColor Yellow
