@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Los topicos del enunciado (seccion 9), declarados en codigo.
+ * Los topicos del enunciado (seccion 9) y la DLT de audit.timeline, declarados en codigo.
  *
  * <p>KafkaAdmin los crea al arrancar si no existen. Si existen con otra
  * cantidad de particiones, Spring las aumenta (nunca reduce); la
@@ -30,6 +30,7 @@ public class TopologiaKafka {
     public static final String TOPICO_EVENTOS = "deliveries.events";
     public static final String TOPICO_TIMELINE = "audit.timeline";
     public static final String TOPICO_DLT = "deliveries.events.DLT";
+    public static final String TOPICO_TIMELINE_DLT = "audit.timeline.DLT";
 
     /** Definicion declarativa, tambien la fuente para GET /api/kafka/topics. */
     public record Definicion(String nombre, int particiones, String politica, Duration retencion, String proposito) {
@@ -42,7 +43,9 @@ public class TopologiaKafka {
                 new Definicion(TOPICO_TIMELINE, particiones, "compact,delete", Duration.ofDays(30),
                         "Historial quien / que / cuando / desde donde (compactado por entrega)."),
                 new Definicion(TOPICO_DLT, particiones, "delete", Duration.ofDays(14),
-                        "Mensajes que fallaron tras N reintentos, con metadatos de error."));
+                        "Mensajes que fallaron tras N reintentos, con metadatos de error."),
+                new Definicion(TOPICO_TIMELINE_DLT, particiones, "delete", Duration.ofDays(14),
+                        "Resumenes de audit.timeline que reporteria no pudo aplicar."));
     }
 
     private final int replicas;

@@ -1,5 +1,7 @@
 package cl.agrotrack.report.infraestructura.web;
 
+import cl.agrotrack.report.aplicacion.ActividadService;
+import cl.agrotrack.report.aplicacion.ActividadService.ActividadRol;
 import cl.agrotrack.report.aplicacion.ReportService;
 import cl.agrotrack.report.aplicacion.ReportService.Kpis;
 import cl.agrotrack.report.config.SecurityConfig;
@@ -40,6 +42,7 @@ class ReportControllerTest {
 
     @Autowired MockMvc mvc;
     @MockitoBean ReportService report;
+    @MockitoBean ActividadService actividad;
 
     @Test
     @DisplayName("Sin token: 401")
@@ -66,6 +69,19 @@ class ReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tiempoCicloPromedioMin").value(42.5))
                 .andExpect(jsonPath("$.estadosActivos.REGISTRADA").value(2));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("GET /actividad: eventos por rol en el rango (alimentado por audit.timeline)")
+    void actividad() throws Exception {
+        when(actividad.actividad(any())).thenReturn(List.of(
+                new ActividadRol("OPERADOR", 12), new ActividadRol("PRODUCTOR", 4)));
+
+        mvc.perform(get("/api/report/actividad").param("range", "last7d"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].rol").value("OPERADOR"))
+                .andExpect(jsonPath("$[0].eventos").value(12));
     }
 
     @Test

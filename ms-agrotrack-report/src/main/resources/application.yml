@@ -12,7 +12,7 @@ spring:
       auto-offset-reset: earliest
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      # Valor: ErrorHandlingDeserializer + JsonDeserializer -> Envelope (config/KafkaConfig)
+      # Valor: ErrorHandlingDeserializer + JsonDeserializer -> Envelope o ResumenTimeline segun el topico (config/KafkaConfig)
       max-poll-records: 100
       # Solo lo confirmado: nunca se lee algo de una transaccion abortada
       isolation-level: read-committed
@@ -44,6 +44,8 @@ agrotrack:
   kafka:
     topico-eventos: deliveries.events
     grupo: report-consumer
+    topico-timeline: audit.timeline
+    grupo-timeline: report-timeline
 
 server:
   port: ${SERVER_PORT:8085}

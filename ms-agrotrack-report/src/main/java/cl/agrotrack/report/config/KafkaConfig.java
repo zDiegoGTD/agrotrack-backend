@@ -2,12 +2,15 @@ package cl.agrotrack.report.config;
 
 import cl.agrotrack.report.aplicacion.Envelope;
 import cl.agrotrack.report.aplicacion.MensajeInvalidoException;
+import cl.agrotrack.report.aplicacion.ResumenTimeline;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.kafka.DefaultKafkaConsumerFactoryCustomizer;
 import org.springframework.boot.autoconfigure.kafka.DefaultKafkaProducerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -48,11 +51,23 @@ public class KafkaConfig {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConfig.class);
 
+    /**
+     * Report lee dos topicos con dos formas: deliveries.events trae un
+     * {@link Envelope} y audit.timeline un {@link ResumenTimeline}. El tipo se
+     * elige por el nombre del topico, no por cabeceras del emisor.
+     */
     @Bean
     @SuppressWarnings({"unchecked", "rawtypes"})
-    DefaultKafkaConsumerFactoryCustomizer deserializadorDeEventos(ObjectMapper json) {
-        return factory -> ((DefaultKafkaConsumerFactory) factory).setValueDeserializerSupplier(() ->
-                new ErrorHandlingDeserializer<>(new JsonDeserializer<>(Envelope.class, json, false)));
+    DefaultKafkaConsumerFactoryCustomizer deserializadorDeEventos(ObjectMapper json,
+                                                                  @Value("${agrotrack.kafka.topico-timeline}") String timeline) {
+        JavaType envelope = json.constructType(Envelope.class);
+        JavaType resumen = json.constructType(ResumenTimeline.class);
+        return factory -> ((DefaultKafkaConsumerFactory) factory).setValueDeserializerSupplier(() -> {
+            JsonDeserializer<Object> porTopico = new JsonDeserializer<>(json);
+            porTopico.setUseTypeHeaders(false);
+            porTopico.setTypeResolver((topico, datos, cabeceras) -> timeline.equals(topico) ? resumen : envelope);
+            return new ErrorHandlingDeserializer<>(porTopico);
+        });
     }
 
     @Bean

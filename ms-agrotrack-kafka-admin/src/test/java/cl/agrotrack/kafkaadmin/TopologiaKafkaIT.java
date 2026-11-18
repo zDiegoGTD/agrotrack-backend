@@ -36,9 +36,10 @@ class TopologiaKafkaIT {
     @Autowired KafkaAdmin kafkaAdmin;
 
     @Test
-    @DisplayName("Los tres topicos existen con 3 particiones, 1 replica y la politica/retencion del enunciado")
+    @DisplayName("Los cuatro topicos existen con 3 particiones, 1 replica y la politica/retencion del enunciado")
     void topicosDeclarados() throws Exception {
-        List<String> nombres = List.of(TopologiaKafka.TOPICO_EVENTOS, TopologiaKafka.TOPICO_TIMELINE, TopologiaKafka.TOPICO_DLT);
+        List<String> nombres = List.of(TopologiaKafka.TOPICO_EVENTOS, TopologiaKafka.TOPICO_TIMELINE,
+                TopologiaKafka.TOPICO_DLT, TopologiaKafka.TOPICO_TIMELINE_DLT);
 
         try (AdminClient admin = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
             Map<String, TopicDescription> desc = admin.describeTopics(nombres).allTopicNames().get();
@@ -61,6 +62,11 @@ class TopologiaKafkaIT {
 
             Config dlt = cfgs.get(new ConfigResource(ConfigResource.Type.TOPIC, TopologiaKafka.TOPICO_DLT));
             assertThat(dlt.get(TopicConfig.RETENTION_MS_CONFIG).value()).isEqualTo(String.valueOf(Duration.ofDays(14).toMillis()));
+
+            // Lo que report no puede aplicar de audit.timeline: delete (no compactar errores), 14 dias
+            Config timelineDlt = cfgs.get(new ConfigResource(ConfigResource.Type.TOPIC, TopologiaKafka.TOPICO_TIMELINE_DLT));
+            assertThat(timelineDlt.get(TopicConfig.CLEANUP_POLICY_CONFIG).value()).isEqualTo("delete");
+            assertThat(timelineDlt.get(TopicConfig.RETENTION_MS_CONFIG).value()).isEqualTo(String.valueOf(Duration.ofDays(14).toMillis()));
         }
     }
 }

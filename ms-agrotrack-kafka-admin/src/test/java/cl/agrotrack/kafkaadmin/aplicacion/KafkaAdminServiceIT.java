@@ -114,7 +114,7 @@ class KafkaAdminServiceIT {
     @Test
     @DisplayName("Los topicos del sistema no se borran ni se les cambian particiones; solo la retencion")
     void topicosDelSistema() {
-        assertThat(servicio.recursosDelSistema()).contains("deliveries.events", "audit.timeline", "deliveries.events.DLT");
+        assertThat(servicio.recursosDelSistema()).contains("deliveries.events", "audit.timeline", "deliveries.events.DLT", "audit.timeline.DLT");
         assertThatThrownBy(() -> servicio.eliminarTopico("deliveries.events"))
                 .isInstanceOfSatisfying(AdministracionInvalidaException.class,
                         e -> assertThat(e.motivo()).isEqualTo(Motivo.RECURSO_DEL_SISTEMA));

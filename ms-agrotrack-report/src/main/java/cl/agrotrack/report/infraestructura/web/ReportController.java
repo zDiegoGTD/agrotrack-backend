@@ -1,5 +1,7 @@
 package cl.agrotrack.report.infraestructura.web;
 
+import cl.agrotrack.report.aplicacion.ActividadService;
+import cl.agrotrack.report.aplicacion.ActividadService.ActividadRol;
 import cl.agrotrack.report.aplicacion.Rango;
 import cl.agrotrack.report.aplicacion.ReportService;
 import cl.agrotrack.report.aplicacion.ReportService.Kpis;
@@ -23,10 +25,12 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService report;
+    private final ActividadService actividad;
     private final Clock clock;
 
-    public ReportController(ReportService report, Clock clock) {
+    public ReportController(ReportService report, ActividadService actividad, Clock clock) {
         this.report = report;
+        this.actividad = actividad;
         this.clock = clock;
     }
 
@@ -41,6 +45,12 @@ public class ReportController {
     public List<TopProducto> topProductos(@RequestParam(defaultValue = "last7d") String range,
                                           @RequestParam(defaultValue = "10") int limite) {
         return report.topProductos(Rango.parse(range, clock), limite);
+    }
+
+    /** GET /api/report/actividad?range=last7d — eventos por rol, desde audit.timeline. */
+    @GetMapping("/actividad")
+    public List<ActividadRol> actividad(@RequestParam(defaultValue = "last7d") String range) {
+        return actividad.actividad(Rango.parse(range, clock));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
