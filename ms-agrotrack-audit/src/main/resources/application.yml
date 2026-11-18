@@ -12,14 +12,14 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     consumer:
-      group-id: audit-consumer
+      group-id: ${agrotrack.kafka.grupo}
       auto-offset-reset: earliest
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # Valor: ErrorHandlingDeserializer + JsonDeserializer -> Envelope (config/KafkaConfig)
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Valor: JsonSerializer con el ObjectMapper de Spring, sin cabecera de tipo (config/KafkaConfig)
       acks: all
     listener:
       # El offset se confirma cuando el listener retorna (RECORD): si el
@@ -31,6 +31,7 @@ agrotrack:
   kafka:
     topico-eventos: deliveries.events
     topico-timeline: audit.timeline
+    grupo: audit-consumer
 
 server:
   port: ${SERVER_PORT:8086}

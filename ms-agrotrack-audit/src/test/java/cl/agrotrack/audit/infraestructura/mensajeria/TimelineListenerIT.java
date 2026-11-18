@@ -7,14 +7,19 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
@@ -54,7 +59,6 @@ class TimelineListenerIT {
         r.add("spring.datasource.password", POSTGRES::getPassword);
     }
 
-    @Autowired KafkaTemplate<String, String> kafka;
     @Autowired AuditService audit;
 
     /**
@@ -85,7 +89,7 @@ class TimelineListenerIT {
     @DisplayName("Un evento en deliveries.events termina en el timeline y su resumen en audit.timeline")
     void eventoTerminaEnTimeline() {
         String id = UUID.randomUUID().toString();
-        kafka.send("deliveries.events", "DEL-K-1", evento(id, "DEL-K-1"));
+        enviarCrudo("deliveries.events", "DEL-K-1", evento(id, "DEL-K-1"));
 
         await().atMost(Duration.ofSeconds(30)).until(() -> !audit.timelineDe("DEL-K-1").isEmpty());
         assertThat(audit.timelineDe("DEL-K-1").get(0).getEventId()).isEqualTo(id);
@@ -98,20 +102,70 @@ class TimelineListenerIT {
     }
 
     @Test
-    @DisplayName("Un mensaje invalido va a deliveries.events.DLT con la causa en cabeceras, sin reintentos")
-    void invalidoAlDlt() {
-        kafka.send("deliveries.events", "basura", "esto no es json {");
+    @DisplayName("Un cuerpo que no es JSON no se puede deserializar: va a la DLT tal cual y el consumidor sigue con el siguiente")
+    void ilegibleAlDlt_yElSiguienteSeProcesa() {
+        enviarCrudo("deliveries.events", "basura", "esto no es json {");
+        String id = UUID.randomUUID().toString();
+        enviarCrudo("deliveries.events", "DEL-K-2", evento(id, "DEL-K-2"));
 
-        List<ConsumerRecord<String, String>> dlt = leer("deliveries.events.DLT", 1);
-        assertThat(dlt).hasSizeGreaterThanOrEqualTo(1);
-        ConsumerRecord<String, String> r = dlt.get(dlt.size() - 1);
+        ConsumerRecord<String, String> r = esperar("deliveries.events.DLT", "basura");
         assertThat(r.value()).isEqualTo("esto no es json {");
-        // Cabeceras que deja el DeadLetterPublishingRecoverer: la excepcion del
-        // listener (envolvente) y su causa real, mas topico/particion/offset de origen.
-        String causa = new String(r.headers().lastHeader("kafka_dlt-exception-cause-fqcn").value(), StandardCharsets.UTF_8);
-        assertThat(causa).contains("MensajeInvalidoException");
-        assertThat(new String(r.headers().lastHeader("kafka_dlt-original-topic").value(), StandardCharsets.UTF_8))
-                .isEqualTo("deliveries.events");
+        assertThat(cabecera(r, "kafka_dlt-exception-fqcn") + cabecera(r, "kafka_dlt-exception-cause-fqcn"))
+                .contains("DeserializationException");
+        assertThat(cabecera(r, "kafka_dlt-original-topic")).isEqualTo("deliveries.events");
+
+        await().atMost(Duration.ofSeconds(30)).until(() -> !audit.timelineDe("DEL-K-2").isEmpty());
+    }
+
+    @Test
+    @DisplayName("Un JSON valido sin eventId es invalido para el negocio: va a la DLT sin reintentos")
+    void sinEventIdAlDlt() {
+        enviarCrudo("deliveries.events", "DEL-K-3",
+                "{\"type\":\"delivery.received\",\"subject\":\"DEL-K-3\",\"occurredAt\":\"2026-09-07T12:00:00Z\"}");
+
+        ConsumerRecord<String, String> r = esperar("deliveries.events.DLT", "DEL-K-3");
+        assertThat(cabecera(r, "kafka_dlt-exception-cause-fqcn")).contains("MensajeInvalidoException");
+    }
+
+    @Test
+    @DisplayName("El resumen en audit.timeline es un ResumenTimeline JSON, sin cabecera de tipo Java")
+    void resumenTipado() throws Exception {
+        String id = UUID.randomUUID().toString();
+        enviarCrudo("deliveries.events", "DEL-K-4", evento(id, "DEL-K-4"));
+
+        ConsumerRecord<String, String> r = esperar("audit.timeline", "DEL-K-4");
+        assertThat(r.headers().lastHeader("__TypeId__")).isNull();
+        JsonNode resumen = new ObjectMapper().readTree(r.value());
+        assertThat(resumen.get("codigo").asText()).isEqualTo("DEL-K-4");
+        assertThat(resumen.get("eventId").asText()).isEqualTo(id);
+        assertThat(resumen.get("actorRol").asText()).isEqualTo("OPERADOR");
+        assertThat(resumen.get("ocurridoEn").asText()).isEqualTo("2026-09-07T12:00:00Z");
+    }
+
+    private static void enviarCrudo(String topico, String clave, String valor) {
+        try (KafkaProducer<String, String> p = new KafkaProducer<>(Map.of(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class))) {
+            p.send(new ProducerRecord<>(topico, clave, valor));
+        }
+    }
+
+    /** Lee el topico desde el inicio hasta que aparece un registro con esa clave (30 s maximo). */
+    private static ConsumerRecord<String, String> esperar(String topico, String clave) {
+        long limite = System.currentTimeMillis() + 30_000;
+        while (System.currentTimeMillis() < limite) {
+            var con = leer(topico, 1).stream().filter(x -> clave.equals(x.key())).reduce((a, b) -> b);
+            if (con.isPresent()) {
+                return con.get();
+            }
+        }
+        throw new AssertionError("no llego a " + topico + " un registro con clave " + clave);
+    }
+
+    private static String cabecera(ConsumerRecord<String, String> r, String nombre) {
+        var h = r.headers().lastHeader(nombre);
+        return h == null ? "" : new String(h.value(), StandardCharsets.UTF_8);
     }
 
     private static List<ConsumerRecord<String, String>> leer(String topico, int minimo) {

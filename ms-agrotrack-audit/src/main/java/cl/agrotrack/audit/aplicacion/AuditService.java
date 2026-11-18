@@ -38,14 +38,14 @@ public class AuditService {
     }
 
     /**
-     * Procesa un evento crudo de deliveries.events.
+     * Procesa un evento de deliveries.events, ya deserializado por el consumidor.
      *
      * @return el evento registrado, o vacio si ya se habia procesado
-     * @throws MensajeInvalidoException si el JSON no es un envelope valido
+     * @throws MensajeInvalidoException si le faltan los campos obligatorios del sobre
      */
     @Transactional
-    public Optional<EventoTimeline> registrar(String cuerpo) {
-        Envelope env = parsear(cuerpo);
+    public Optional<EventoTimeline> registrar(Envelope env) {
+        validar(env);
         if (!idempotencia.marcarSiEsNuevo(env.eventId())) {
             log.info("[dup] {} {} ya registrado", env.type(), env.eventId());
             return Optional.empty();
@@ -76,6 +76,12 @@ public class AuditService {
                 PageRequest.of(0, tam, Sort.by(Sort.Direction.DESC, "ocurridoEn", "id"))).getContent();
     }
 
+    /** El mismo registro desde el JSON crudo, p. ej. para reinyectar un evento copiado del log. */
+    @Transactional
+    public Optional<EventoTimeline> registrar(String cuerpo) {
+        return registrar(parsear(cuerpo));
+    }
+
     Envelope parsear(String cuerpo) {
         Envelope env;
         try {
@@ -83,13 +89,21 @@ public class AuditService {
         } catch (IOException e) {
             throw new MensajeInvalidoException("JSON invalido: " + resumen(cuerpo), e);
         }
+        validar(env);
+        return env;
+    }
+
+    /** Un evento sin estos campos no se puede deduplicar ni ubicar en el timeline: no se reintenta. */
+    static void validar(Envelope env) {
+        if (env == null) {
+            throw new MensajeInvalidoException("Evento vacio");
+        }
         if (env.eventId() == null || env.eventId().isBlank()) {
-            throw new MensajeInvalidoException("Evento sin eventId: " + resumen(cuerpo));
+            throw new MensajeInvalidoException("Evento sin eventId: " + env.type() + " " + env.subject());
         }
         if (env.type() == null || env.subject() == null || env.occurredAt() == null) {
-            throw new MensajeInvalidoException("Evento sin type/subject/occurredAt: " + resumen(cuerpo));
+            throw new MensajeInvalidoException("Evento sin type/subject/occurredAt: " + env.eventId());
         }
-        return env;
     }
 
     private static String resumen(String s) {

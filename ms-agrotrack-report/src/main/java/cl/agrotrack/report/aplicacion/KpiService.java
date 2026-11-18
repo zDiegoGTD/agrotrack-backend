@@ -36,8 +36,8 @@ public class KpiService {
 
     /** @return true si el evento se aplico; false si ya se habia procesado. */
     @Transactional
-    public boolean aplicar(String cuerpo) {
-        Envelope env = parsear(cuerpo);
+    public boolean aplicar(Envelope env) {
+        validar(env);
         if (!marcarSiEsNuevo(env.eventId())) {
             log.info("[dup] {} {} ya aplicado", env.type(), env.eventId());
             return false;
@@ -144,6 +144,12 @@ public class KpiService {
 
     // ---- parseo ----
 
+    /** Lo mismo desde el JSON crudo, p. ej. para reinyectar un evento copiado del log. */
+    @Transactional
+    public boolean aplicar(String cuerpo) {
+        return aplicar(parsear(cuerpo));
+    }
+
     Envelope parsear(String cuerpo) {
         Envelope env;
         try {
@@ -151,10 +157,15 @@ public class KpiService {
         } catch (IOException e) {
             throw new MensajeInvalidoException("JSON invalido: " + resumen(cuerpo), e);
         }
-        if (env.eventId() == null || env.type() == null || env.subject() == null || env.occurredAt() == null) {
-            throw new MensajeInvalidoException("Evento incompleto: " + resumen(cuerpo));
-        }
+        validar(env);
         return env;
+    }
+
+    /** Sin estos campos no se puede deduplicar ni ubicar en la hora: no se reintenta. */
+    static void validar(Envelope env) {
+        if (env == null || env.eventId() == null || env.type() == null || env.subject() == null || env.occurredAt() == null) {
+            throw new MensajeInvalidoException("Evento incompleto: " + (env == null ? "vacio" : env.type() + " " + env.eventId()));
+        }
     }
 
     private static Long numero(String s) {

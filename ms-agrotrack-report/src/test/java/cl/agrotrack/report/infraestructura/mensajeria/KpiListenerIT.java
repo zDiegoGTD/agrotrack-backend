@@ -10,7 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import java.nio.charset.StandardCharsets;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
@@ -57,7 +65,6 @@ class KpiListenerIT {
         }
     }
 
-    @Autowired KafkaTemplate<String, String> kafka;
     @Autowired JdbcTemplate jdbc;
 
     @Test
@@ -69,11 +76,60 @@ class KpiListenerIT {
                  "actor":{"userId":"op-1","nombre":"Jefa","role":"OPERADOR"},
                  "data":{"codigo":"DEL-K-9","bodegaId":4,"productoId":1,"productorId":"p","cantidad":100,"pesoRecibido":90,"estado":"RECIBIDA"}}
                 """.formatted(UUID.randomUUID(), Instant.now());
-        kafka.send("deliveries.events", "DEL-K-9", cuerpo);
+        enviarCrudo("deliveries.events", "DEL-K-9", cuerpo);
 
         await().atMost(Duration.ofSeconds(30)).until(() ->
                 jdbc.queryForObject("SELECT COUNT(*) FROM ciclo_entrega WHERE entrega_codigo = 'DEL-K-9'", Integer.class) == 1);
         Integer recibidas = jdbc.queryForObject("SELECT SUM(recibidas) FROM kpi_entregas_hora WHERE bodega_id = 4", Integer.class);
         assertThat(recibidas).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Un cuerpo ilegible va a la DLT con sus bytes originales y el consumidor sigue con el siguiente")
+    void ilegibleAlDlt_yElSiguienteSeAplica() {
+        enviarCrudo("deliveries.events", "roto", "{roto");
+        String cuerpo = """
+                {"specVersion":"1.0","type":"delivery.received","eventId":"%s","occurredAt":"%s",
+                 "source":"ms-agrotrack-deliveries","subject":"DEL-K-10",
+                 "data":{"bodegaId":5,"productoId":1,"pesoRecibido":10,"estado":"RECIBIDA"}}
+                """.formatted(UUID.randomUUID(), Instant.now());
+        enviarCrudo("deliveries.events", "DEL-K-10", cuerpo);
+
+        ConsumerRecord<String, String> dlt = esperar("deliveries.events.DLT", "roto");
+        assertThat(dlt.value()).isEqualTo("{roto");
+        String causas = new String(dlt.headers().lastHeader("kafka_dlt-exception-fqcn").value(), StandardCharsets.UTF_8)
+                + new String(dlt.headers().lastHeader("kafka_dlt-exception-cause-fqcn").value(), StandardCharsets.UTF_8);
+        assertThat(causas).contains("DeserializationException");
+        await().atMost(Duration.ofSeconds(30)).until(() ->
+                jdbc.queryForObject("SELECT COUNT(*) FROM ciclo_entrega WHERE entrega_codigo = 'DEL-K-10'", Integer.class) == 1);
+    }
+
+    private static void enviarCrudo(String topico, String clave, String valor) {
+        try (KafkaProducer<String, String> p = new KafkaProducer<>(Map.of(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class))) {
+            p.send(new ProducerRecord<>(topico, clave, valor));
+        }
+    }
+
+    private static ConsumerRecord<String, String> esperar(String topico, String clave) {
+        try (KafkaConsumer<String, String> c = new KafkaConsumer<>(Map.of(
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
+                ConsumerConfig.GROUP_ID_CONFIG, "test-" + System.nanoTime(),
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class))) {
+            c.subscribe(List.of(topico));
+            long limite = System.currentTimeMillis() + 30_000;
+            while (System.currentTimeMillis() < limite) {
+                for (ConsumerRecord<String, String> r : c.poll(Duration.ofMillis(500))) {
+                    if (clave.equals(r.key())) {
+                        return r;
+                    }
+                }
+            }
+        }
+        throw new AssertionError("no llego a " + topico + " un registro con clave " + clave);
     }
 }

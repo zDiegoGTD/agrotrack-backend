@@ -8,20 +8,21 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     consumer:
-      group-id: report-consumer
+      group-id: ${agrotrack.kafka.grupo}
       auto-offset-reset: earliest
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # Valor: ErrorHandlingDeserializer + JsonDeserializer -> Envelope (config/KafkaConfig)
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Valor (solo para la DLT): JsonSerializer con el ObjectMapper de Spring (config/KafkaConfig)
     listener:
       ack-mode: record
 
 agrotrack:
   kafka:
     topico-eventos: deliveries.events
+    grupo: report-consumer
 
 server:
   port: ${SERVER_PORT:8085}

@@ -37,7 +37,7 @@ public class MensajeriaConfig {
 
     @Bean
     @ConditionalOnProperty(name = "agrotrack.mensajeria.enabled", havingValue = "true", matchIfMissing = true)
-    PublicadorEventos publicadorMensajeria(KafkaTemplate<String, String> kafka,
+    PublicadorEventos publicadorMensajeria(KafkaTemplate<String, Envelope> kafka,
                                            RabbitTemplate rabbit,
                                            ObjectMapper json,
                                            Envelopes envelopes,

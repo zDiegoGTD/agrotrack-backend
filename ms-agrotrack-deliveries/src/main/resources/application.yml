@@ -14,7 +14,7 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Valor: JsonSerializer con el ObjectMapper de Spring, sin cabecera de tipo (config/KafkaConfig)
       acks: all
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}

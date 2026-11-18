@@ -40,7 +40,7 @@ public class PublicadorMensajeria implements PublicadorEventos {
 
     private static final Logger log = LoggerFactory.getLogger(PublicadorMensajeria.class);
 
-    private final KafkaTemplate<String, String> kafka;
+    private final KafkaTemplate<String, Envelope> kafka;
     private final RabbitTemplate rabbit;
     private final ObjectMapper json;
     private final Envelopes envelopes;
@@ -49,7 +49,7 @@ public class PublicadorMensajeria implements PublicadorEventos {
     /** Efecto asincrono -> routing key del comando; viene de agrotrack.rabbit.comandos. */
     private final Map<Efecto, String> comandos;
 
-    public PublicadorMensajeria(KafkaTemplate<String, String> kafka, RabbitTemplate rabbit, ObjectMapper json,
+    public PublicadorMensajeria(KafkaTemplate<String, Envelope> kafka, RabbitTemplate rabbit, ObjectMapper json,
                                 Envelopes envelopes, String topicoEventos, String exchangeComandos,
                                 Map<Efecto, String> comandos) {
         this.kafka = kafka;
@@ -89,9 +89,10 @@ public class PublicadorMensajeria implements PublicadorEventos {
     // ---- publicacion ----
 
     private void publicarHecho(Envelope env) {
+        // El valor viaja tipado (JsonSerializer, config/KafkaConfig); el cuerpo en texto es solo para el log.
         String cuerpo = serializar(env);
         try {
-            kafka.send(topicoEventos, env.subject(), cuerpo).get();
+            kafka.send(topicoEventos, env.subject(), env).get();
             log.info("[kafka] {} {} eventId={}", env.type(), env.subject(), env.eventId());
         } catch (InterruptedException ex) {
             // Se apaga el servicio mientras espera a Kafka: se deja constancia y se respeta la interrupcion.

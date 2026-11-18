@@ -60,7 +60,7 @@ class PublicadorMensajeriaIT {
     static final Instant AHORA = Instant.parse("2026-09-07T12:00:00Z");
     static final Actor OPERADOR = new Actor("op-1", "Jefa de acopio", Rol.OPERADOR);
 
-    static KafkaTemplate<String, String> kafka;
+    static KafkaTemplate<String, Envelope> kafka;
     static CachingConnectionFactory rabbitCf;
     static RabbitTemplate rabbit;
     static PublicadorMensajeria publicador;
@@ -71,10 +71,6 @@ class PublicadorMensajeriaIT {
         KAFKA.start();
         RABBIT.start();
 
-        kafka = new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(Map.of(
-                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
-                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class)));
 
         rabbitCf = new CachingConnectionFactory(RABBIT.getHost(), RABBIT.getAmqpPort());
         rabbitCf.setUsername(RABBIT.getAdminUsername());
@@ -94,6 +90,12 @@ class PublicadorMensajeriaIT {
 
         json = new ObjectMapper().findAndRegisterModules().registerModule(new JavaTimeModule())
                 .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // Como en la app (config/KafkaConfig): JsonSerializer con el ObjectMapper de Spring, sin cabecera de tipo.
+        org.springframework.kafka.support.serializer.JsonSerializer<Envelope> valor =
+                new org.springframework.kafka.support.serializer.JsonSerializer<Envelope>(json).noTypeInfo();
+        kafka = new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(Map.<String, Object>of(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers()),
+                new StringSerializer(), valor));
         publicador = new PublicadorMensajeria(kafka, rabbit, json,
                 new Envelopes(Clock.fixed(AHORA, ZoneOffset.UTC)), "deliveries.events", "cmd.direct",
                 java.util.Map.of(cl.agrotrack.deliveries.dominio.Efecto.NOTIFICAR_PRODUCTOR, "email.send",
@@ -126,6 +128,7 @@ class PublicadorMensajeriaIT {
         assertThat(registros).hasSize(1);
         ConsumerRecord<String, String> r = registros.get(0);
         assertThat(r.key()).isEqualTo("DEL-2026-000777");
+        assertThat(r.headers().lastHeader("__TypeId__")).as("sin cabecera de tipo Java").isNull();
         JsonNode hecho = json.readTree(r.value());
         assertThat(hecho.get("type").asText()).isEqualTo("delivery.received");
         assertThat(hecho.get("specVersion").asText()).isEqualTo("1.0");
