@@ -128,4 +128,15 @@ class HttpClientTimeoutTest {
 
         org.assertj.core.api.Assertions.assertThat(cuerpo).contains("PATCH");
     }
+
+    @Test
+    @DisplayName("Read timeout por defecto: 10 s, bajo el limite de 11 s y sobre los 8 s que espera kafka-admin al broker")
+    void readTimeoutPorDefecto() {
+        new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+                .withUserConfiguration(HttpClientConfig.class)
+                .run(ctx -> {
+                    int lectura = ctx.getBean(HttpClientConfig.class).getReadTimeoutMs();
+                    org.assertj.core.api.Assertions.assertThat(lectura).isEqualTo(10_000).isLessThan(11_000);
+                });
+    }
 }

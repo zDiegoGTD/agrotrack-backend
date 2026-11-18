@@ -88,14 +88,26 @@ class AdministracionControllerTest {
             "{\"nombre\":\"__consumer_offsets\",\"particiones\":3,\"replicas\":1}",
             "{\"nombre\":\"topico/raro\",\"particiones\":3,\"replicas\":1}",
             "{\"nombre\":\"demo\",\"particiones\":0,\"replicas\":1}",
-            "{\"nombre\":\"demo\",\"particiones\":3,\"replicas\":4}"})
-    @DisplayName("Nombre vacio, con espacios, interno (__), particiones 0 o replicas > 3: 400 sin tocar Kafka")
+            "{\"nombre\":\"demo\",\"particiones\":3,\"replicas\":11}"})
+    @DisplayName("Nombre vacio, con espacios, interno (__), particiones 0 o replicas > 10: 400 sin tocar Kafka")
     void topicoInvalido(String cuerpo) throws Exception {
         mvc.perform(post("/api/kafka/topics").with(admin())
                         .contentType(MediaType.APPLICATION_JSON).content(cuerpo))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.codigo").value("DATOS_INVALIDOS"));
         verifyNoInteractions(servicio);
+    }
+
+    @Test
+    @DisplayName("Replicas hasta 10 pasan la validacion: decide el broker (en AWS, 4 replicas con 3 brokers -> 409)")
+    void replicasLasDecideElBroker() throws Exception {
+        when(servicio.crearTopico("demo", 3, (short) 4, Map.of())).thenReturn(topico("demo", 3));
+
+        mvc.perform(post("/api/kafka/topics").with(admin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"demo\",\"particiones\":3,\"replicas\":4}"))
+                .andExpect(status().isCreated());
+        verify(servicio).crearTopico("demo", 3, (short) 4, Map.of());
     }
 
     @Test

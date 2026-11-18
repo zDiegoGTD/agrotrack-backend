@@ -19,7 +19,8 @@ public class TimelineListener {
         this.actividad = actividad;
     }
 
-    @KafkaListener(topics = "${agrotrack.kafka.topico-timeline}", groupId = "${agrotrack.kafka.grupo-timeline}")
+    @KafkaListener(topics = "${agrotrack.kafka.topico-timeline}", groupId = "${agrotrack.kafka.grupo-timeline}",
+            clientIdPrefix = "${spring.application.name}-timeline")
     public void onResumen(ResumenTimeline resumen) {
         actividad.aplicar(resumen);
     }

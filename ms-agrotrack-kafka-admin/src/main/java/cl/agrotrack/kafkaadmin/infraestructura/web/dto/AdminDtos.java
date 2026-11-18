@@ -26,7 +26,8 @@ public final class AdminDtos {
             @NotBlank @Size(max = 200) @Pattern(regexp = NOMBRE, message = "solo letras, numeros, '.', '_' y '-', sin '__' al inicio")
             String nombre,
             @Min(1) @Max(50) int particiones,
-            @Min(1) @Max(3) short replicas,
+            // Hasta 10: si el cluster tiene menos brokers, el broker lo rechaza con su motivo (409)
+            @Min(1) @Max(10) short replicas,
             Map<@Pattern(regexp = CLAVE_CONFIG) String, @NotBlank String> configuracion) {
     }
 

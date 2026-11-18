@@ -3,11 +3,13 @@ package cl.agrotrack.audit.config;
 import cl.agrotrack.audit.aplicacion.Envelope;
 import cl.agrotrack.audit.aplicacion.MensajeInvalidoException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.autoconfigure.kafka.DefaultKafkaConsumerFactoryCustomizer;
 import org.springframework.boot.autoconfigure.kafka.DefaultKafkaProducerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +27,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
 
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -44,9 +47,12 @@ import java.util.Map;
  * caida) se reintenta 3 veces con 1 s entre intentos y despues va a la DLT.
  */
 @Configuration
-public class KafkaConfig {
+public class KafkaConfig implements DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConfig.class);
+
+    /** No es un bean (desactivaria el ProducerFactory de Boot): se cierra a mano en {@link #destroy()}. */
+    private DefaultKafkaProducerFactory<String, byte[]> productorCrudo;
 
     @Bean
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -70,8 +76,8 @@ public class KafkaConfig {
         // Un registro que no se pudo deserializar se republica con sus bytes
         // originales (no hay objeto): necesita un productor de byte[], con la
         // misma conexion y propiedades que el productor principal.
-        KafkaTemplate<String, byte[]> crudo = new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(
-                kafka.getProducerFactory().getConfigurationProperties(), new StringSerializer(), new ByteArraySerializer()));
+        productorCrudo = productorCrudo(kafka.getProducerFactory().getConfigurationProperties());
+        KafkaTemplate<String, byte[]> crudo = new KafkaTemplate<>(productorCrudo);
         Map<Class<?>, KafkaOperations<?, ?>> templates = new LinkedHashMap<>();
         templates.put(byte[].class, crudo);
         templates.put(Object.class, kafka);
@@ -92,6 +98,23 @@ public class KafkaConfig {
         // bien formado pero incompleto tampoco tiene arreglo reintentando.
         handler.addNotRetryableExceptions(MensajeInvalidoException.class);
         return handler;
+    }
+
+    /** Misma conexion y propiedades que el productor principal, con client.id propio (<id>-dlt). */
+    static DefaultKafkaProducerFactory<String, byte[]> productorCrudo(Map<String, Object> principal) {
+        Map<String, Object> props = new HashMap<>(principal);
+        Object id = principal.get(ProducerConfig.CLIENT_ID_CONFIG);
+        if (id != null) {
+            props.put(ProducerConfig.CLIENT_ID_CONFIG, id + "-dlt");
+        }
+        return new DefaultKafkaProducerFactory<>(props, new StringSerializer(), new ByteArraySerializer());
+    }
+
+    @Override
+    public void destroy() {
+        if (productorCrudo != null) {
+            productorCrudo.destroy();
+        }
     }
 
     @Bean

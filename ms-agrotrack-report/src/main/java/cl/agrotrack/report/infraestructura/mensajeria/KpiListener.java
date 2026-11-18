@@ -19,7 +19,8 @@ public class KpiListener {
         this.kpis = kpis;
     }
 
-    @KafkaListener(topics = "${agrotrack.kafka.topico-eventos}", groupId = "${agrotrack.kafka.grupo}")
+    @KafkaListener(topics = "${agrotrack.kafka.topico-eventos}", groupId = "${agrotrack.kafka.grupo}",
+            clientIdPrefix = "${spring.application.name}-eventos")
     public void onEvento(Envelope evento) {
         kpis.aplicar(evento);
     }

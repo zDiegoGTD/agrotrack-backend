@@ -86,6 +86,9 @@ class TimelineListenerIT {
     void grupoPropio() {
         assertThat(listeners.getListenerContainers()).extracting(c -> c.getGroupId())
                 .contains("report-consumer", "report-timeline");
+        // Cada listener con su prefijo de client-id: sin esto los dos usan ms-agrotrack-report-0..2
+        assertThat(listeners.getListenerContainers()).extracting(c -> c.getContainerProperties().getClientId())
+                .containsExactlyInAnyOrder("ms-agrotrack-report-eventos", "ms-agrotrack-report-timeline");
     }
 
     private static void enviarCrudo(String topico, String clave, String valor) {

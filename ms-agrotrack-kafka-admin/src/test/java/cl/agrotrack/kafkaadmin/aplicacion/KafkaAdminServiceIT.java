@@ -29,6 +29,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 /** El servicio contra un Kafka real de 1 broker: lo que pide la API pasa de verdad en el cluster. */
 @SpringBootTest(properties = "agrotrack.kafka.replicas=1")
@@ -174,6 +177,42 @@ class KafkaAdminServiceIT {
                     .isInstanceOfSatisfying(AdministracionInvalidaException.class,
                             e -> assertThat(e.motivo()).isEqualTo(Motivo.CONFLICTO_CON_EXISTENTE));
         }
+    }
+
+    @Test
+    @DisplayName("En un topico del sistema la retencion debe ser un numero positivo: vacio, -1 o texto son DATOS_INVALIDOS")
+    void retencionDelSistemaPositiva() {
+        for (String valor : new String[]{"", "-1", "0", "siempre"}) {
+            assertThatThrownBy(() -> servicio.cambiarConfiguracion("deliveries.events", Map.of("retention.ms", valor)))
+                    .as("retention.ms=%s", valor)
+                    .isInstanceOfSatisfying(AdministracionInvalidaException.class,
+                            e -> assertThat(e.motivo()).isEqualTo(Motivo.DATOS_INVALIDOS));
+        }
+        assertThat(servicio.topico("deliveries.events").configuracion())
+                .containsEntry("retention.ms", String.valueOf(java.time.Duration.ofDays(7).toMillis()));
+    }
+
+    @Test
+    @DisplayName("Un topico que desaparece entre listar y describir se omite; el resto se lista igual")
+    void topicoQueDesapareceSeOmite() {
+        KafkaAdminService espia = spy(servicio);
+        doReturn(java.util.Set.of("fantasma-" + nombre, "deliveries.events")).when(espia).nombresTopicos();
+
+        assertThat(espia.topicos()).extracting(EstadoTopico::nombre).containsExactly("deliveries.events");
+    }
+
+    @Test
+    @DisplayName("Un grupo que desaparece entre listar y describir se omite; el resto se lista igual")
+    void grupoQueDesapareceSeOmite() {
+        servicio.crearTopico(nombre, 1, (short) 1, Map.of());
+        producir(2);
+        String vivo = "vivo-" + nombre;
+        consumirYCerrar(vivo, 1);
+        KafkaAdminService espia = spy(servicio);
+        doReturn(List.of("ya-no-" + nombre, vivo)).when(espia).idsGrupos();
+        doThrow(new AdministracionInvalidaException(Motivo.NO_EXISTE, "se fue")).when(espia).grupo("ya-no-" + nombre);
+
+        assertThat(espia.grupos()).extracting(EstadoGrupo::grupo).containsExactly(vivo);
     }
 
     // ---- utilidades ----

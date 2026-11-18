@@ -23,7 +23,7 @@ public class HttpClientConfig {
 
     public HttpClientConfig(
             @Value("${agrotrack.http.client.connect-timeout-ms:3000}") int connectTimeoutMs,
-            @Value("${agrotrack.http.client.read-timeout-ms:5000}") int readTimeoutMs) {
+            @Value("${agrotrack.http.client.read-timeout-ms:10000}") int readTimeoutMs) {
         this.connectTimeoutMs = connectTimeoutMs;
         this.readTimeoutMs = readTimeoutMs;
     }

@@ -18,8 +18,6 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       # Valor: ErrorHandlingDeserializer + JsonDeserializer -> Envelope (config/KafkaConfig)
       max-poll-records: 100
-      # Solo lo confirmado: nunca se lee algo de una transaccion abortada
-      isolation-level: read-committed
       heartbeat-interval: 5s
       client-id: ${spring.application.name}
       properties:

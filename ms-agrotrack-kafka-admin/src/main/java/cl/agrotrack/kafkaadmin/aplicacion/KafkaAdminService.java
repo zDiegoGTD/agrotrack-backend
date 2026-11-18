@@ -60,7 +60,9 @@ import java.util.stream.Collectors;
 public class KafkaAdminService {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaAdminService.class);
-    private static final long TIMEOUT_S = 15;
+    // Menor que el read timeout del BFF (10 s): un broker lento responde 502 con
+    // motivo desde aqui, no 503 generico desde el BFF.
+    private static final long TIMEOUT_S = 8;
 
     /** Se muestran siempre, aunque esten en su valor por defecto. */
     private static final Set<String> CONFIG_PRINCIPAL = Set.of(
@@ -101,10 +103,33 @@ public class KafkaAdminService {
     // ---- topicos ----
 
     public List<EstadoTopico> topicos() {
-        Set<String> nombres = esperar(admin.listTopics().names());
-        return describir(nombres).values().stream()
-                .sorted((a, b) -> a.nombre().compareTo(b.nombre()))
-                .toList();
+        Set<String> nombres = nombresTopicos();
+        Collection<EstadoTopico> estados;
+        try {
+            estados = describir(nombres).values();
+        } catch (AdministracionInvalidaException e) {
+            if (e.motivo() != Motivo.NO_EXISTE) {
+                throw e;
+            }
+            // Alguno se borro entre listar y describir: se describe uno por uno y se omite el que ya no esta
+            estados = nombres.stream().map(this::describirSiExiste).flatMap(java.util.Optional::stream).toList();
+        }
+        return estados.stream().sorted((a, b) -> a.nombre().compareTo(b.nombre())).toList();
+    }
+
+    Set<String> nombresTopicos() {
+        return esperar(admin.listTopics().names());
+    }
+
+    private java.util.Optional<EstadoTopico> describirSiExiste(String nombre) {
+        try {
+            return java.util.Optional.of(topico(nombre));
+        } catch (AdministracionInvalidaException e) {
+            if (e.motivo() == Motivo.NO_EXISTE) {
+                return java.util.Optional.empty();
+            }
+            throw e;
+        }
     }
 
     public EstadoTopico topico(String nombre) {
@@ -131,6 +156,15 @@ public class KafkaAdminService {
         if (delSistema.contains(nombre) && !AJUSTABLE_EN_SISTEMA.containsAll(configuracion.keySet())) {
             throw new AdministracionInvalidaException(Motivo.RECURSO_DEL_SISTEMA,
                     nombre + " es un topico del sistema: solo se puede ajustar " + AJUSTABLE_EN_SISTEMA);
+        }
+        if (delSistema.contains(nombre)) {
+            // Mantenimiento si, pero nunca dejarlo sin limite (-1), en 0 ni volver al default del broker
+            configuracion.forEach((clave, valor) -> {
+                if (valor == null || !valor.matches("^[1-9][0-9]*$")) {
+                    throw new AdministracionInvalidaException(Motivo.DATOS_INVALIDOS,
+                            clave + " de un topico del sistema debe ser un numero positivo de milisegundos");
+                }
+            });
         }
         topico(nombre); // NO_EXISTE antes de intentar cambiar
         ConfigResource recurso = new ConfigResource(ConfigResource.Type.TOPIC, nombre);
@@ -160,12 +194,21 @@ public class KafkaAdminService {
     // ---- consumer groups ----
 
     public List<EstadoGrupo> grupos() {
+        return idsGrupos().stream().sorted().map(id -> {
+            try {
+                return java.util.Optional.of(grupo(id));
+            } catch (AdministracionInvalidaException e) {
+                if (e.motivo() == Motivo.NO_EXISTE) {
+                    return java.util.Optional.<EstadoGrupo>empty(); // se elimino entre listar y describir
+                }
+                throw e;
+            }
+        }).flatMap(java.util.Optional::stream).toList();
+    }
+
+    List<String> idsGrupos() {
         Collection<ConsumerGroupListing> listados = esperar(admin.listConsumerGroups().all());
-        return listados.stream()
-                .map(ConsumerGroupListing::groupId)
-                .sorted()
-                .map(this::grupo)
-                .toList();
+        return listados.stream().map(ConsumerGroupListing::groupId).toList();
     }
 
     public EstadoGrupo grupo(String grupo) {

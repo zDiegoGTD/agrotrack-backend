@@ -69,8 +69,8 @@ particiones desde el último offset confirmado (resiliencia).
   `enable.idempotence=true`, compresión `lz4`, reintentos acotados por
   `delivery.timeout.ms`.
 - **Consumidores:** `ErrorHandlingDeserializer` + `JsonDeserializer`. Report
-  elige `Envelope` o `ResumenTimeline` según el tópico. `read_committed`,
-  `max.poll.records=100`, offsets confirmados por registro (`ack-mode: record`).
+  elige `Envelope` o `ResumenTimeline` según el tópico. `max.poll.records=100`,
+  client-id propio por listener, offsets confirmados por registro (`ack-mode: record`).
 - **Errores** (`config/KafkaConfig` de audit y report):
 
 | Situación | Qué pasa |
