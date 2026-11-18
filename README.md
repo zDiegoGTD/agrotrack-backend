@@ -51,6 +51,7 @@ por qué. Después:
 - [`docs/08-aws-academy.md`](docs/08-aws-academy.md) — despliegue
 - [`docs/09-pauta-ep1.md`](docs/09-pauta-ep1.md) — pauta EP1 (identidad, API Manager) y dónde se cumple
 - [`docs/11-pauta-ep3-ep4.md`](docs/11-pauta-ep3-ep4.md) — **pauta EP3 y EP4 (RabbitMQ) y dónde se cumple cada indicador**
+- [`docs/12-pauta-ep5.md`](docs/12-pauta-ep5.md) — **pauta EP5 (Kafka) y dónde se cumple cada indicador**
 - [`docs/10-checklist-demo.md`](docs/10-checklist-demo.md) — guion de la demostración
 
 ## Seguridad en una línea por capa

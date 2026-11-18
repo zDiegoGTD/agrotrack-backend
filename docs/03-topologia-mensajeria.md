@@ -29,6 +29,13 @@ routing key hacia la DLQ que le corresponde.
 | `deliveries.events` | 3 | 3 | delete | 7 días | `subject` (id de entrega) |
 | `audit.timeline` | 3 | 3 | compact,delete | 30 días | `subject` |
 | `deliveries.events.DLT` | 3 | 3 | delete | 14 días | `subject` |
+| `audit.timeline.DLT` | 3 | 3 | delete | 14 días | código de la entrega |
+
+| Tópico | Productor (DTO) | Consumidores (grupo) |
+|---|---|---|
+| `deliveries.events` | deliveries, `Envelope` | audit (`audit-consumer`), report (`report-consumer`) |
+| `audit.timeline` | audit, `ResumenTimeline` | report (`report-timeline`) |
+| `*.DLT` | el `DeadLetterPublishingRecoverer` de cada consumidor | se inspeccionan en Kafka UI |
 
 **Por qué la clave es el id de la entrega:** Kafka garantiza orden *dentro de
 una partición*, no entre particiones. Si los eventos de una misma entrega se
@@ -43,6 +50,64 @@ releer todo), y `delete` con 30 días evita que crezca sin límite.
 **Consumer groups:** `audit-consumer` y `report-consumer`, separados. Cada uno
 lee `deliveries.events` completo y a su propio ritmo. Si reportería se cae,
 auditoría no se entera — que es exactamente el punto de usar Kafka aquí.
+`report-timeline` lee `audit.timeline` en un grupo aparte, para que su avance
+no dependa del de `report-consumer`.
+
+Dentro de un grupo, cada listener corre **3 hilos** (`concurrency`, uno por
+partición). Con una sola instancia, cada hilo toma una partición; si se
+levanta una segunda instancia del mismo servicio, Kafka reparte las 3
+particiones entre las dos (balanceo) y, si una cae, la otra retoma sus
+particiones desde el último offset confirmado (resiliencia).
+
+### Mensajes tipados y errores
+
+- **Productores:** el valor viaja como objeto (`Envelope`, `ResumenTimeline`)
+  con `JsonSerializer` y el `ObjectMapper` de Spring (fechas ISO-8601), sin
+  cabecera de tipo Java. Cliente idempotente: `acks=all`,
+  `enable.idempotence=true`, compresión `lz4`, reintentos acotados por
+  `delivery.timeout.ms`.
+- **Consumidores:** `ErrorHandlingDeserializer` + `JsonDeserializer`. Report
+  elige `Envelope` o `ResumenTimeline` según el tópico. `read_committed`,
+  `max.poll.records=100`, offsets confirmados por registro (`ack-mode: record`).
+- **Errores** (`config/KafkaConfig` de audit y report):
+
+| Situación | Qué pasa |
+|---|---|
+| El cuerpo no es JSON | `DeserializationException`: no se reintenta, va a `<tópico>.DLT` con sus bytes originales y el consumidor sigue con el siguiente |
+| JSON válido pero sin `eventId`, `type`, `subject` u `occurredAt` | `MensajeInvalidoException`: no se reintenta, va a la DLT |
+| Falla transitoria (la base caída) | 3 intentos con 1 s entre ellos; después, a la DLT |
+| Reentrega de un evento ya aplicado | se descarta por `processed_events` (idempotencia) |
+
+Cada envío a la DLT deja el log `[dlt] clave@offset de tópico (partición) -> DLT. Causa: ...`
+y cabeceras `kafka_dlt-*` con la excepción, el tópico, la partición y el offset de origen.
+
+## API de administración de Kafka (`ms-agrotrack-kafka-admin`)
+
+Toda la lógica vive en `KafkaAdminService` (AdminClient); los controladores
+solo traducen HTTP. Escribir es solo **ADMIN** (en el BFF y en el servicio);
+`OPERADOR` puede consultar.
+
+| Método | Ruta | Qué hace | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/kafka/topics` | Todos los tópicos (sin los internos) con particiones, réplicas y configuración | 200 |
+| `POST` | `/api/kafka/topics` | Crea un tópico: nombre, particiones (1-50), réplicas (1-3) y configuración | 201 + `Location` |
+| `GET` | `/api/kafka/topics/{nombre}` | Estado de un tópico | 200 |
+| `PATCH` | `/api/kafka/topics/{nombre}/config` | Cambia configuración (`retention.ms`, `cleanup.policy`...); valor vacío = volver al default | 200 |
+| `POST` | `/api/kafka/topics/{nombre}/particiones` | Aumenta particiones (Kafka no permite bajarlas) | 200 |
+| `DELETE` | `/api/kafka/topics/{nombre}` | Elimina un tópico | 204 |
+| `GET` | `/api/kafka/consumer-groups` | Grupos con estado, miembros y **lag** por tópico | 200 |
+| `GET` | `/api/kafka/consumer-groups/{grupo}` | Un grupo | 200 |
+| `POST` | `/api/kafka/consumer-groups/{grupo}/topics/{tópico}/offsets` | Mueve los offsets al `INICIO` (reprocesar) o al `FIN` (saltar lo pendiente); solo con el grupo detenido | 200 |
+| `GET` | `/api/kafka/protegidos` | Tópicos del sistema | 200 |
+
+Los tópicos del sistema no se borran ni se reparticionan (cambiar las
+particiones cambiaría a qué partición va cada entrega y rompería su orden);
+solo se les puede ajustar `retention.ms`. Errores con el mismo `codigo` que
+mq-admin: `DATOS_INVALIDOS` 400, `RECURSO_DEL_SISTEMA` 403, `NO_EXISTE` 404,
+`CONFLICTO_CON_EXISTENTE` 409 (ya existe, más réplicas que brokers, grupo
+activo), `BROKER_RECHAZO` 502.
+
+Prueba en vivo: [`infra/aws/probar-kafka-admin.ps1`](../infra/aws/probar-kafka-admin.ps1) (15 casos, `-Pausa` para mirarlo en Kafka UI).
 
 ## Los dos servicios "administradores"
 

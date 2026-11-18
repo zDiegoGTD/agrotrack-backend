@@ -85,7 +85,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     restart: unless-stopped
     container_name: at-kafka-ui
     depends_on: [kafka-1, kafka-2, kafka-3]

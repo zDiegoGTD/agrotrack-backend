@@ -69,7 +69,7 @@ services:
       - "9092:9092"
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     container_name: at-kafka-ui
     depends_on: [kafka]
     environment:
