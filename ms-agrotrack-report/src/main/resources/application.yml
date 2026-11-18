@@ -13,11 +13,32 @@ spring:
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       # Valor: ErrorHandlingDeserializer + JsonDeserializer -> Envelope (config/KafkaConfig)
+      max-poll-records: 100
+      # Solo lo confirmado: nunca se lee algo de una transaccion abortada
+      isolation-level: read-committed
+      heartbeat-interval: 5s
+      client-id: ${spring.application.name}
+      properties:
+        session.timeout.ms: 15000
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       # Valor (solo para la DLT): JsonSerializer con el ObjectMapper de Spring (config/KafkaConfig)
+      # Productor confiable: idempotente (sin duplicados al reintentar), todas las
+      # replicas en sincronia confirman (acks=all) y reintenta hasta delivery.timeout.
+      acks: all
+      retries: 2147483647
+      compression-type: lz4
+      client-id: ${spring.application.name}
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+        linger.ms: 5
     listener:
       ack-mode: record
+      # Un hilo por particion (3): el grupo reparte deliveries.events entre
+      # ellos y, con mas instancias del servicio, entre las instancias.
+      concurrency: ${KAFKA_CONCURRENCIA:3}
 
 agrotrack:
   kafka:

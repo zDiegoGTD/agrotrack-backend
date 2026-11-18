@@ -19,6 +19,9 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import java.nio.charset.StandardCharsets;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
@@ -66,6 +69,7 @@ class KpiListenerIT {
     }
 
     @Autowired JdbcTemplate jdbc;
+    @Autowired KafkaListenerEndpointRegistry listeners;
 
     @Test
     @DisplayName("delivery.received por Kafka -> fila en ciclo_entrega y contador de la hora")
@@ -102,6 +106,21 @@ class KpiListenerIT {
         assertThat(causas).contains("DeserializationException");
         await().atMost(Duration.ofSeconds(30)).until(() ->
                 jdbc.queryForObject("SELECT COUNT(*) FROM ciclo_entrega WHERE entrega_codigo = 'DEL-K-10'", Integer.class) == 1);
+    }
+
+    @Test
+    @DisplayName("El grupo report-consumer corre 3 hilos, uno por particion de deliveries.events")
+    void concurrenciaIgualAParticiones() {
+        ConcurrentMessageListenerContainer<?, ?> contenedor = listeners.getListenerContainers().stream()
+                .filter(c -> "report-consumer".equals(c.getGroupId()))
+                .map(c -> (ConcurrentMessageListenerContainer<?, ?>) c)
+                .findFirst().orElseThrow();
+
+        assertThat(contenedor.getConcurrency()).isEqualTo(3);
+        await().atMost(Duration.ofSeconds(30)).until(() -> contenedor.getContainers().stream()
+                .allMatch(h -> h.getAssignedPartitions() != null && h.getAssignedPartitions().size() == 1));
+        assertThat(contenedor.getContainers().stream()
+                .flatMap(h -> h.getAssignedPartitions().stream()).distinct().count()).isEqualTo(3);
     }
 
     private static void enviarCrudo(String topico, String clave, String valor) {

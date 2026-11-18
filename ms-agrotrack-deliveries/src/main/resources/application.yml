@@ -15,7 +15,17 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       # Valor: JsonSerializer con el ObjectMapper de Spring, sin cabecera de tipo (config/KafkaConfig)
+      # Productor confiable: idempotente (sin duplicados al reintentar), todas las
+      # replicas en sincronia confirman (acks=all) y reintenta hasta delivery.timeout.
       acks: all
+      retries: 2147483647
+      compression-type: lz4
+      client-id: ${spring.application.name}
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+        linger.ms: 5
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
